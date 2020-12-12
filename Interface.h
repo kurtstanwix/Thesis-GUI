@@ -3,8 +3,9 @@
 
 #include "SFML/Graphics.hpp"
 #include "NetworkTopology.h"
+#include "Renderable.h"
 
-class Interface
+class Interface : public Renderable
 {
     private:
         sf::RectangleShape m_exitButton;
@@ -16,8 +17,9 @@ class Interface
         
         Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop);
         
+        /* Renderable interface */
         void update(sf::Event &event, const sf::Vector2f &windowSize);
-        void render(sf::RenderWindow &window, sf::Vector2f &windowSize);
+        void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
 };
 
 #endif

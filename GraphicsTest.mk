@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Kurt Stanwix
-Date                   :=12/11/20
+Date                   :=12/12/20
 CodeLitePath           :=/home/kurt/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -61,7 +61,7 @@ AS       := /usr/bin/as
 ##
 CodeLiteDir:=/usr/share/codelite
 LD_LIBRARY_PATH:=$HOME/Desktop/madp/lib
-Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) 
 
 
 
@@ -115,6 +115,14 @@ $(IntermediateDirectory)/NetworkTopology.cpp$(DependSuffix): NetworkTopology.cpp
 
 $(IntermediateDirectory)/NetworkTopology.cpp$(PreprocessSuffix): NetworkTopology.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/NetworkTopology.cpp$(PreprocessSuffix) NetworkTopology.cpp
+
+$(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix): NetworkWindow.cpp $(IntermediateDirectory)/NetworkWindow.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/NetworkWindow.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/NetworkWindow.cpp$(DependSuffix): NetworkWindow.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/NetworkWindow.cpp$(DependSuffix) -MM NetworkWindow.cpp
+
+$(IntermediateDirectory)/NetworkWindow.cpp$(PreprocessSuffix): NetworkWindow.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/NetworkWindow.cpp$(PreprocessSuffix) NetworkWindow.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

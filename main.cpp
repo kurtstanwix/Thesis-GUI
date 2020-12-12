@@ -29,8 +29,7 @@ int main(int argc, char **argv)
 #include <stdlib.h>
 
 #include "SFML/Graphics.hpp"
-#include "NetworkTopology.h"
-#include "Interface.h"
+#include "NetworkWindow.h"
 
 
 
@@ -68,19 +67,9 @@ int main(int argc, char **argv)
     sf::RenderWindow window(sf::VideoMode(width, height), "MDP Policy");
     
     srand(time(0));
-    cout << "Test" << endl;
-    NetworkTopology *test = NetworkTopology::createTopology(20,
-            squareWidth, sf::Vector2f(window.getSize()));
     
-    if (test == NULL) {
-        cout << "Bad file" << endl;
-        exit(0);
-    }
-    NetworkTopology &network = *test;
-    network.print();
-    
-    Interface interface(sf::Vector2f(window.getSize()), network);
-    
+    NetworkWindow networkWindow(20, squareWidth,
+            sf::Vector2f(window.getSize()));
     
     //window.setPosition(sf::Vector2i(50, 50));
     
@@ -102,15 +91,13 @@ int main(int argc, char **argv)
                 if (event.type == sf::Event::Closed)
                     window.close();
                 else {
-                    interface.update(event, windowSize);
-                    network.update(event, windowSize);
+                    networkWindow.update(event, windowSize);
                 }
             }
             oldTime = system_clock::now();
         }
         window.clear();
-        network.render(window, windowSize);
-        interface.render(window, windowSize);
+        networkWindow.render(window, windowSize);
         window.display();
         /*
         */

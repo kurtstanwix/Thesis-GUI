@@ -16,7 +16,7 @@ Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
     m_saveButton.setFillColor(sf::Color(30, 200, 30));
     m_saveButton.setOutlineColor(sf::Color::Black);
     
-    
+    m_renderable = true;
 }
 
 void Interface::update(sf::Event &event, const sf::Vector2f &windowSize) {
@@ -42,7 +42,8 @@ void Interface::update(sf::Event &event, const sf::Vector2f &windowSize) {
     }
 }
 
-void Interface::render(sf::RenderWindow &window, sf::Vector2f &windowSize) {
+void Interface::render(sf::RenderWindow &window,
+        const sf::Vector2f &windowSize) {
     const sf::Vector2f &exitButtonSize = m_exitButton.getSize();
     m_exitButton.setPosition(windowSize.x - exitButtonSize.x, exitButtonSize.y);
     

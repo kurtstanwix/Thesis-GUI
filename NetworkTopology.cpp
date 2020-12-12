@@ -17,8 +17,12 @@ using json = nlohmann::json;
 
 
 
-const NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
+NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
 
+void NetworkTopology::Link::update(sf::Event &event,
+        const sf::Vector2f &windowSize) {
+    
+}
 
 NetworkTopology::Link::Link(Node &end1, Node &end2) :
         m_end1(end1),
@@ -27,10 +31,11 @@ NetworkTopology::Link::Link(Node &end1, Node &end2) :
     m_end1.links.push_back(*this);
     end1Arrow.setPointCount(3);
     end2Arrow.setPointCount(3);
+    m_renderable = true;
 }
 
 void NetworkTopology::Link::render(sf::RenderWindow &window,
-        sf::Vector2f &windowSize) {
+        const sf::Vector2f &windowSize) {
     sf::Color fillColor;
     if (activated) {
         fillColor = sf::Color::Yellow;
@@ -51,96 +56,66 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
     float rx = -r * std::cos(rot * M_PI / 180);
     float ry = -r * std::sin(rot * M_PI / 180);
     
+    /* Get the offset of the endpoint of the link's "from" side from the centre
+     * point of the node */
     float xo, yo;
-    if ((rot >= 45 && rot <= 135) || (rot <= -45 && rot >= -135)) { // Above and Below
-        if (rot > 0) // Below
-            yo = -m_end1.shape.getSize().y / 2 + ry;
-        else // Above
-            yo = m_end1.shape.getSize().y / 2 + ry;
+    if ((rot <= -45 && rot >= -135) || (rot >= 45 && rot <= 135)) { // Above and Below
+        if (rot < 0) // Above
+            yo = -m_end1.shape.getSize().y / 2 - ry;
+        else // Below
+            yo = m_end1.shape.getSize().y / 2 - ry;
         xo = yo * std::tan(-(rot - 90) * M_PI / 180);
-    } else { // Left and Right
+    } else { // Right and Left
         if (rot >= -45 && rot <= 45) // Right
-            xo = -m_end1.shape.getSize().x / 2 + rx;
+            xo = m_end1.shape.getSize().x / 2 - rx;
         else // Left
-            xo = m_end1.shape.getSize().x / 2 + rx;
+            xo = -m_end1.shape.getSize().x / 2 - rx;
         yo = xo * std::tan(rot * M_PI / 180);
     }
     
     
+    /* Set the length and add appropriate endpoint icons */
     float length = std::sqrt(std::pow(end1Pos.x - end2Pos.x, 2) +
                     std::pow(end1Pos.y - end2Pos.y, 2));
     float overlapLength = std::sqrt(std::pow(xo, 2) + std::pow(yo, 2));
-    sf::Vector2f centre = (end1Pos + end2Pos) / 2.0f;
+    sf::Vector2f origin = end1Pos;
     switch (m_isBidirectional) {
         case true:
         {
             //fillColor = sf::Color::Magenta;
             shape.setFillColor(fillColor);
             length -= overlapLength;
-            centre.x -= xo / 2;
-            centre.y -= yo / 2;
+            /* Draw from the edge of outbound node as it's also inbound */
+            origin.x += xo;
+            origin.y += yo;
             
             end1Arrow.setRadius(r);
             end1Arrow.setFillColor(fillColor);
             end1Arrow.setOrigin(r, r);
             
-            end1Arrow.setPosition(end1Pos.x - xo, end1Pos.y - yo);
+            end1Arrow.setPosition(end1Pos.x + xo, end1Pos.y + yo);
             end1Arrow.setRotation(rot - 90);
             window.draw(end1Arrow);
         }
             /* FALL-THROUGH */
         case false:
             length -= overlapLength;
-            centre.x += xo / 2;
-            centre.y += yo / 2;
             
             end2Arrow.setRadius(r);
             end2Arrow.setFillColor(fillColor);
             end2Arrow.setOrigin(r, r);
             
-            end2Arrow.setPosition(end2Pos.x + xo, end2Pos.y + yo);
+            end2Arrow.setPosition(end2Pos.x - xo, end2Pos.y - yo);
             end2Arrow.setRotation(rot + 90);
             window.draw(end2Arrow);
     }
     
     shape.setSize(sf::Vector2f(length, 4));
-    shape.setPosition(centre);
+    shape.setPosition(origin);
     
     
     shape.setRotation(rot);
-    shape.setOrigin(shape.getSize() / 2.0f);
-    
-    
-    
-            /*
-    switch(policy[i]) {
-        case 0: // Up
-            arrowLine.rotate(90.0f);
-            arrowHead.setPosition(
-                    arrowLine.getPosition().x,
-                    arrowLine.getPosition().y - arrowLine.getSize().x / 2);
-            break;
-        case 1: // Down
-            arrowLine.rotate(90.0f);
-            arrowHead.setPosition(
-                    arrowLine.getPosition().x,
-                    arrowLine.getPosition().y + arrowLine.getSize().x / 2);
-            arrowHead.rotate(180.0f);
-            break;
-        case 2: // Left
-            arrowHead.setPosition(
-                    arrowLine.getPosition().x - arrowLine.getSize().x / 2,
-                    arrowLine.getPosition().y);
-            arrowHead.rotate(270.0f);
-            break;
-        case 3: // Right
-            arrowHead.setPosition(
-                    arrowLine.getPosition().x + arrowLine.getSize().x / 2,
-                    arrowLine.getPosition().y);
-            arrowHead.rotate(90.0f);
-            break;
-    }
-*/
+    shape.setOrigin(0, shape.getSize().y / 2.0f);
     
     //window.draw(arrowHead);
     window.draw(shape);
@@ -157,10 +132,16 @@ void NetworkTopology::Node::init(int id, int width) {
     shape.setOrigin(width / 2, width / 2);
     shape.setFillColor(sf::Color(0, 0, 200));
     shape.setOutlineColor(sf::Color::Black);
+    m_renderable = true;
+}
+
+void NetworkTopology::Node::update(sf::Event &event,
+        const sf::Vector2f &windowSize) {
+    
 }
 
 void NetworkTopology::Node::render(sf::RenderWindow &window,
-        sf::Vector2f &windowSize) {
+        const sf::Vector2f &windowSize) {
     if (id == INVALID_ID) {
         return;
     }
@@ -228,6 +209,8 @@ NetworkTopology::NetworkTopology(int numNodes, int nodeWidth,
         
         
     }
+    
+    m_renderable = true;
     
     
     std::cout << std::endl;
@@ -304,6 +287,8 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
         
     }
     
+    m_renderable = true;
+    
     
     std::cout << std::endl;
     
@@ -349,7 +334,10 @@ NetworkTopology* NetworkTopology::createTopology(int numNodes,
     
     NetworkTopology *test = new NetworkTopology(nodeLinks, nodeWidth, windowSize);
     //NetworkTopology *test = new NetworkTopology(numNodes, nodeWidth, windowSize);
-    
+    for (std::list<std::reference_wrapper<Link>>::iterator it = test->m_links.begin();
+            it != test->m_links.end(); it++) {
+        std::cout << "Link: " << it->get() << std::endl;
+    }
     return test;
 }
 
@@ -391,7 +379,7 @@ NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
     return NULL;
 }
 
-void NetworkTopology::addLink(Node& n1, Node& n2) {
+void NetworkTopology::addLink(Node &n1, Node &n2) {
     Link *existingLink = getLink(n1, n2);
     if (existingLink == NULL) {
         Link &l = *(new Link(n1, n2));
@@ -403,6 +391,42 @@ void NetworkTopology::addLink(Node& n1, Node& n2) {
         existingLink->m_isBidirectional = true;
         n1.links.push_back(*existingLink);
     }
+}
+
+void NetworkTopology::removeNode(Node &node) {
+    // Need to remove links with this node on either end. Do this without
+    // iterating list twice for each element
+    std::cout <<"Removing node " << node.id << std::endl;
+    for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
+            it != m_links.end(); it++) {
+        Link &link = it->get();
+        Node &otherEnd = link.getOtherEnd(node);
+        if (&otherEnd == &Node::null_node) {
+            std::cout << "No good " <<link << std::endl;
+            continue;
+        }
+        Node &toDelete = Node::null_node;
+        
+        if (&link.m_end1 == &node) {
+            std::cout << "Removing Link to " << otherEnd.id << std::endl;
+            node.links.remove(link);
+            toDelete = otherEnd;
+        } else {
+            std::cout << "Removing Link from " << otherEnd.id << std::endl;
+            otherEnd.links.remove(link);
+            toDelete = node;
+        }
+        if (link.m_isBidirectional) {
+            std::cout << "is bidirectional" << std::endl;
+            toDelete.links.remove(link);
+        } else
+            std::cout << "isn't bidirectional" << std::endl;
+        it = m_links.erase(it);
+        it--;
+        delete &(link);
+    }
+    m_nodes.erase(node);
+    delete &node;
 }
 
 void NetworkTopology::activateNode(Node& node) {
@@ -472,6 +496,13 @@ void NetworkTopology::update(sf::Event& event, const sf::Vector2f& windowSize)
                 m_selectedNode->y = pixelToUnit(windowSize.y, m_nodeWidth, event.mouseMove.y);
             }
             break;
+        case sf::Event::KeyPressed:
+            if (event.key.code == sf::Keyboard::Delete) {
+                if (m_selectedNode != NULL) {
+                    removeNode(*m_selectedNode);
+                }
+            }
+            
         default:
             break;
     }
@@ -479,16 +510,18 @@ void NetworkTopology::update(sf::Event& event, const sf::Vector2f& windowSize)
 
 
 void NetworkTopology::render(sf::RenderWindow& window,
-        sf::Vector2f &windowSize)
+        const sf::Vector2f &windowSize)
 {
     for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
             it != m_nodes.end(); it++) {
-        it->get().render(window, windowSize);
+        if (it->get().isRenderable())
+            it->get().render(window, windowSize);
     }
     
     for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
             it != m_links.end(); it++) {
-        it->get().render(window, windowSize);
+        if (it->get().isRenderable())
+            it->get().render(window, windowSize);
     }
 }
 

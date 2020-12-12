@@ -8,8 +8,9 @@
 #include <list>
 #include <memory>
 #include "SFML/Graphics.hpp"
+#include "Renderable.h"
 
-class NetworkTopology
+class NetworkTopology : public Renderable
 {
     private:
         struct Link;
@@ -29,11 +30,12 @@ class NetworkTopology
         
         Link* getLink(Node& n1, Node& n2);
         void addLink(Node& n1, Node& n2);
+        void removeNode(Node &node);
         void activateNode(Node& node);
         void deactivateNode(Node& node);
         
         
-        struct Node {
+        struct Node : public Renderable {
             //Node(int id) : id(id) {}
             int id;
             float x; // in unit coordinates
@@ -43,11 +45,15 @@ class NetworkTopology
             bool activated;
             
             void init(int id, int width);
-            void render(sf::RenderWindow &window, sf::Vector2f &windowSize);
             Node() : Node(0, 0) {};
             Node(int id, int width);
+            //virtual ~Node();
             
-            static const Node null_node;
+            /* Renderable interface */
+            void update(sf::Event &event, const sf::Vector2f &windowSize);
+            void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
+            
+            static Node null_node;
             
             friend std::ostream& operator<<(std::ostream& os, const Node& node) {
                 os << node.id;
@@ -59,9 +65,7 @@ class NetworkTopology
             }
         };
         
-        
-        
-        struct Link {
+        struct Link : public Renderable {
             //Node(int id) : id(id) {}
             Node& m_end1;
             Node& m_end2;
@@ -71,7 +75,7 @@ class NetworkTopology
             bool m_isBidirectional;
             bool activated;
             
-            const Node& getOtherEnd(Node& n) const {
+            Node& getOtherEnd(Node& n) const {
                 if (&m_end1 == &n) {
                     return m_end2;
                 } else if (&m_end2 == &n) {
@@ -86,9 +90,17 @@ class NetworkTopology
                 return os;
             }
             
-            void render(sf::RenderWindow &window, sf::Vector2f &windowSize);
+            friend bool operator==(const Link &lhs, const Link &rhs) {
+                return &lhs == &rhs;
+            }
+            
+            
+            /* Renderable interface */
+            void update(sf::Event &event, const sf::Vector2f &windowSize);
+            void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
             
             Link(Node& m_end1, Node& m_end2);
+            //virtual ~Link();
         };
         
         
@@ -115,9 +127,11 @@ class NetworkTopology
             return NULL;
         }
         void save(const std::string &fileName);
-        void update(sf::Event &event, const sf::Vector2f &windowSize);
-        void render(sf::RenderWindow& window, sf::Vector2f &windowSize);
         void print();
+        
+        /* Renderable interface */
+        void update(sf::Event &event, const sf::Vector2f &windowSize);
+        void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
 };
 
 
