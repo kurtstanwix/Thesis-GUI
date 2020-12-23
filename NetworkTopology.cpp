@@ -15,23 +15,31 @@ using json = nlohmann::json;
 
 #define INVALID_ID -1
 
-
-
 NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
 
-void NetworkTopology::Link::update(sf::Event &event,
-        const sf::Vector2f &windowSize) {
-    
-}
+
+
 
 NetworkTopology::Link::Link(Node &end1, Node &end2) :
         m_end1(end1),
-        m_end2(end2)
+        m_end2(end2),
+        shape(40, {end1.shape.getPosition(),
+                {(end1.x + end2.x) / 2.0f, (end1.y + end2.y) / 2.0f},
+                end2.shape.getPosition()})
 {
+    std::cout << "Making link bezier " << sf::Vector2f(end1.x, end1.y) << " - " <<
+            sf::Vector2f((end1.x + end2.x) / 2.0f, (end1.y + end2.y) / 2.0f) << " - " <<
+            sf::Vector2f(end2.x, end2.y) << std::endl;
     m_end1.links.push_back(*this);
     end1Arrow.setPointCount(3);
     end2Arrow.setPointCount(3);
     m_renderable = true;
+}
+
+
+void NetworkTopology::Link::update(sf::Event *event,
+        const sf::Vector2f &windowSize) {
+    shape.update(event, windowSize);
 }
 
 void NetworkTopology::Link::render(sf::RenderWindow &window,
@@ -42,7 +50,7 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
     } else {
         fillColor = sf::Color(125, 0, 0);
     }
-    shape.setFillColor(fillColor);
+    shape.SetColor(fillColor);
     
     sf::Vector2f end1Pos(unitToPixel(windowSize.x, m_end1.x),
             unitToPixel(windowSize.y, m_end1.y));
@@ -52,73 +60,81 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
     float rot = (180 / M_PI) * std::atan2(end2Pos.y - end1Pos.y,
             end2Pos.x - end1Pos.x);
     
-    float r = 1.8f * shape.getSize().y;
+    float r = 1.8f * shape.getWidth();
     float rx = -r * std::cos(rot * M_PI / 180);
     float ry = -r * std::sin(rot * M_PI / 180);
     
     /* Get the offset of the endpoint of the link's "from" side from the centre
      * point of the node */
-    float xo, yo;
+    sf::Vector2f offset;
     if ((rot <= -45 && rot >= -135) || (rot >= 45 && rot <= 135)) { // Above and Below
         if (rot < 0) // Above
-            yo = -m_end1.shape.getSize().y / 2 - ry;
+            offset.y = -m_end1.shape.getSize().y / 2 - ry;
         else // Below
-            yo = m_end1.shape.getSize().y / 2 - ry;
-        xo = yo * std::tan(-(rot - 90) * M_PI / 180);
+            offset.y = m_end1.shape.getSize().y / 2 - ry;
+        offset.x = offset.y * std::tan(-(rot - 90) * M_PI / 180);
     } else { // Right and Left
         if (rot >= -45 && rot <= 45) // Right
-            xo = m_end1.shape.getSize().x / 2 - rx;
+            offset.x = m_end1.shape.getSize().x / 2 - rx;
         else // Left
-            xo = -m_end1.shape.getSize().x / 2 - rx;
-        yo = xo * std::tan(rot * M_PI / 180);
+            offset.x = -m_end1.shape.getSize().x / 2 - rx;
+        offset.y = offset.x * std::tan(rot * M_PI / 180);
     }
     
     
     /* Set the length and add appropriate endpoint icons */
-    float length = std::sqrt(std::pow(end1Pos.x - end2Pos.x, 2) +
-                    std::pow(end1Pos.y - end2Pos.y, 2));
-    float overlapLength = std::sqrt(std::pow(xo, 2) + std::pow(yo, 2));
+    //float length = std::sqrt(std::pow(end1Pos.x - end2Pos.x, 2) +
+    //                std::pow(end1Pos.y - end2Pos.y, 2));
+    float overlapLength = std::sqrt(std::pow(offset.x, 2) + std::pow(offset.y, 2));
     sf::Vector2f origin = end1Pos;
+    end1Pos += offset;
+    end2Pos -= offset;
     switch (m_isBidirectional) {
         case true:
         {
             //fillColor = sf::Color::Magenta;
-            shape.setFillColor(fillColor);
-            length -= overlapLength;
+            shape.SetColor(fillColor);
+            //length -= overlapLength;
             /* Draw from the edge of outbound node as it's also inbound */
-            origin.x += xo;
-            origin.y += yo;
+            origin += offset;
             
             end1Arrow.setRadius(r);
             end1Arrow.setFillColor(fillColor);
             end1Arrow.setOrigin(r, r);
             
-            end1Arrow.setPosition(end1Pos.x + xo, end1Pos.y + yo);
+            end1Arrow.setPosition(end1Pos);
             end1Arrow.setRotation(rot - 90);
             window.draw(end1Arrow);
         }
             /* FALL-THROUGH */
         case false:
-            length -= overlapLength;
+            //length -= overlapLength;
             
             end2Arrow.setRadius(r);
             end2Arrow.setFillColor(fillColor);
             end2Arrow.setOrigin(r, r);
             
-            end2Arrow.setPosition(end2Pos.x - xo, end2Pos.y - yo);
+            end2Arrow.setPosition(end2Pos);
             end2Arrow.setRotation(rot + 90);
             window.draw(end2Arrow);
     }
     
-    shape.setSize(sf::Vector2f(length, 4));
-    shape.setPosition(origin);
+    if (!floatEquals(unitToPixel(windowSize, shape.getStart()), end1Pos) ||
+            !floatEquals(unitToPixel(windowSize, shape.getEnd()), end2Pos)) {
+        shape.setStart(pixelToUnit(windowSize, end1Pos));
+        shape.setEnd(pixelToUnit(windowSize, end2Pos));
+    }
+    shape.render(window, windowSize);
+    
+    //shape.setSize(sf::Vector2f(length, 4));
+    //shape.setPosition(origin);
     
     
-    shape.setRotation(rot);
-    shape.setOrigin(0, shape.getSize().y / 2.0f);
+    //shape.setRotation(rot);
+    //shape.setOrigin(0, shape.getSize().y / 2.0f);
     
     //window.draw(arrowHead);
-    window.draw(shape);
+    //window.draw(shape);
 }
 
 NetworkTopology::Node::Node(int id, int width) {
@@ -135,7 +151,7 @@ void NetworkTopology::Node::init(int id, int width) {
     m_renderable = true;
 }
 
-void NetworkTopology::Node::update(sf::Event &event,
+void NetworkTopology::Node::update(sf::Event *event,
         const sf::Vector2f &windowSize) {
     
 }
@@ -384,7 +400,6 @@ void NetworkTopology::addLink(Node &n1, Node &n2) {
     if (existingLink == NULL) {
         Link &l = *(new Link(n1, n2));
         m_links.push_back(l);
-        m_inactiveLinks.push_back(l);
         std::cout << "Add Link: " << l;
     } else {
         std::cout << "Bidirectional " << *existingLink << std::endl;
@@ -448,64 +463,75 @@ void NetworkTopology::deactivateNode(Node& node) {
 }
 
 
-void NetworkTopology::update(sf::Event& event, const sf::Vector2f& windowSize)
+void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize)
 {
-    switch (event.type) {
-        case sf::Event::MouseButtonPressed:
-        {
-            std::cout << "Mouse Press: x " << event.mouseButton.x << ", y " <<
-                    event.mouseButton.y << std::endl;
-            
-            Node *nodeClicked = NULL;
-            
-            for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
-                    it != m_nodes.end(); it++) {
-                if (it->get().shape.getGlobalBounds().contains(event.mouseButton.x,
-                        event.mouseButton.y)) {
-                    nodeClicked = &it->get();
-                    break;
-                }
-            }
-            if (nodeClicked != NULL) {
-                m_selectedNode = nodeClicked;
-                if (event.mouseButton.button == sf::Mouse::Left) {
-                    std::cout << "Left click on Node " << *nodeClicked << std::endl;
-                    std::cout << "Already activated: " <<
-                            (nodeClicked->activated ? "YES" : "NO") << std::endl;
-                    
-                    activateNode(*nodeClicked);
-                }
-                else if (event.mouseButton.button == sf::Mouse::Right) {
-                    std::cout << "Right click on Node " << *nodeClicked << std::endl;
-                    std::cout << "Already activated: " <<
-                            (nodeClicked->activated ? "YES" : "NO") << std::endl;
-                    
-                    deactivateNode(*nodeClicked);
-                }
-            }
-            break;
-        }
-        case sf::Event::MouseButtonReleased:
-            m_selectedNode = NULL;
-            break;
-        case sf::Event::MouseMoved:
-            if (m_selectedNode != NULL) {
-                std::cout << "Mouse moved x: " << event.mouseMove.x << ", y: " << event.mouseMove.y << std::endl;
+    if (event != nullptr) {
+        switch (event->type) {
+            case sf::Event::MouseButtonPressed:
+            {
+                std::cout << "Mouse Press: x " << event->mouseButton.x << ", y " <<
+                        event->mouseButton.y << std::endl;
                 
-                m_selectedNode->x = pixelToUnit(windowSize.x, event.mouseMove.x);
-                m_selectedNode->y = pixelToUnit(windowSize.y, event.mouseMove.y);
-            }
-            break;
-        case sf::Event::KeyPressed:
-            if (event.key.code == sf::Keyboard::Delete) {
-                if (m_selectedNode != NULL) {
-                    removeNode(*m_selectedNode);
-                    m_selectedNode = NULL;
+                Node *nodeClicked = NULL;
+                
+                for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
+                        it != m_nodes.end(); it++) {
+                    if (it->get().shape.getGlobalBounds().contains(event->mouseButton.x,
+                            event->mouseButton.y)) {
+                        nodeClicked = &it->get();
+                        break;
+                    }
                 }
+                if (nodeClicked != NULL) {
+                    m_selectedNode = nodeClicked;
+                    if (event->mouseButton.button == sf::Mouse::Left) {
+                        std::cout << "Left click on Node " << *nodeClicked << std::endl;
+                        std::cout << "Already activated: " <<
+                                (nodeClicked->activated ? "YES" : "NO") << std::endl;
+                        
+                        activateNode(*nodeClicked);
+                    }
+                    else if (event->mouseButton.button == sf::Mouse::Right) {
+                        std::cout << "Right click on Node " << *nodeClicked << std::endl;
+                        std::cout << "Already activated: " <<
+                                (nodeClicked->activated ? "YES" : "NO") << std::endl;
+                        
+                        deactivateNode(*nodeClicked);
+                    }
+                }
+                break;
             }
-            
-        default:
-            break;
+            case sf::Event::MouseButtonReleased:
+                m_selectedNode = NULL;
+                break;
+            case sf::Event::MouseMoved:
+                if (m_selectedNode != NULL) {
+                    std::cout << "Mouse moved x: " << event->mouseMove.x << ", y: " << event->mouseMove.y << std::endl;
+                    
+                    m_selectedNode->x = pixelToUnit(windowSize.x, event->mouseMove.x);
+                    m_selectedNode->y = pixelToUnit(windowSize.y, event->mouseMove.y);
+                }
+                break;
+            case sf::Event::KeyPressed:
+                if (event->key.code == sf::Keyboard::Delete) {
+                    if (m_selectedNode != NULL) {
+                        removeNode(*m_selectedNode);
+                        m_selectedNode = NULL;
+                    }
+                }
+                
+            default:
+                break;
+        }
+    }
+    for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
+            it != m_nodes.end(); it++) {
+        it->get().update(event, windowSize);
+    }
+    
+    for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
+            it != m_links.end(); it++) {
+        it->get().update(event, windowSize);
     }
 }
 

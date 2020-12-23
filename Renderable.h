@@ -6,15 +6,17 @@
 class Renderable
 {
 public:
-    virtual void update(sf::Event &event, const sf::Vector2f &windowSize) = 0;
+    virtual void update(sf::Event *event, const sf::Vector2f &windowSize) = 0;
     virtual void render(sf::RenderWindow& window,
             const sf::Vector2f &windowSize) = 0;
             
-    bool isRenderable(void) {
+    bool isRenderable(void)
+    {
         return m_renderable;
     }
     
-    void setRenderable(bool renderable) {
+    void setRenderable(bool renderable)
+    {
         m_renderable = renderable;
     }
     

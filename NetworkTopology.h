@@ -8,6 +8,8 @@
 #include <list>
 #include <memory>
 #include "SFML/Graphics.hpp"
+
+#include "BezierCurve.h"
 #include "Renderable.h"
 
 class NetworkTopology : public Renderable
@@ -21,9 +23,6 @@ class NetworkTopology : public Renderable
         int m_nodeWidth;
         
         std::list<std::reference_wrapper<Link>> m_links;
-        
-        std::list<std::reference_wrapper<Link>> m_activeLinks;
-        std::list<std::reference_wrapper<Link>> m_inactiveLinks;
         
         Node *m_selectedNode;
         
@@ -50,7 +49,7 @@ class NetworkTopology : public Renderable
             //virtual ~Node();
             
             /* Renderable interface */
-            void update(sf::Event &event, const sf::Vector2f &windowSize);
+            void update(sf::Event *event, const sf::Vector2f &windowSize);
             void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
             
             static Node null_node;
@@ -69,7 +68,7 @@ class NetworkTopology : public Renderable
             //Node(int id) : id(id) {}
             Node& m_end1;
             Node& m_end2;
-            sf::RectangleShape shape;
+            BezierCurve shape;
             sf::CircleShape end1Arrow;
             sf::CircleShape end2Arrow;
             bool m_isBidirectional;
@@ -96,7 +95,7 @@ class NetworkTopology : public Renderable
             
             
             /* Renderable interface */
-            void update(sf::Event &event, const sf::Vector2f &windowSize);
+            void update(sf::Event *event, const sf::Vector2f &windowSize);
             void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
             
             Link(Node& m_end1, Node& m_end2);
@@ -130,7 +129,7 @@ class NetworkTopology : public Renderable
         void print();
         
         /* Renderable interface */
-        void update(sf::Event &event, const sf::Vector2f &windowSize);
+        void update(sf::Event *event, const sf::Vector2f &windowSize);
         void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
 };
 

@@ -33,7 +33,7 @@ void NetworkWindow::render(sf::RenderWindow &window, const sf::Vector2f &windowS
     }
 }
 
-void NetworkWindow::update(sf::Event &event, const sf::Vector2f &windowSize)
+void NetworkWindow::update(sf::Event *event, const sf::Vector2f &windowSize)
 {
     for (std::list<std::unique_ptr<Renderable>>::iterator it = m_components.begin();
             it != m_components.end(); it++) {

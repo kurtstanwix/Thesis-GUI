@@ -22,26 +22,28 @@ Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
     m_renderable = true;
 }
 
-void Interface::update(sf::Event &event, const sf::Vector2f &windowSize) {
-    switch (event.type) {
-        case sf::Event::MouseButtonPressed:
-        {
-            if (m_exitButton.getGlobalBounds().contains(event.mouseButton.x,
-                    event.mouseButton.y)) {
-                    exit(0);
-            } else if (m_saveButton.getGlobalBounds().contains(event.mouseButton.x,
-                    event.mouseButton.y)) {
-                    std::cout << "Saving" << std::endl;
-                    m_nettop.save("../test2");
+void Interface::update(sf::Event *event, const sf::Vector2f &windowSize) {
+    if (event != nullptr) {
+        switch (event->type) {
+            case sf::Event::MouseButtonPressed:
+            {
+                if (m_exitButton.getGlobalBounds().contains(event->mouseButton.x,
+                        event->mouseButton.y)) {
+                        exit(0);
+                } else if (m_saveButton.getGlobalBounds().contains(event->mouseButton.x,
+                        event->mouseButton.y)) {
+                        std::cout << "Saving" << std::endl;
+                        m_nettop.save("../test2");
+                }
+                break;
             }
-            break;
+            case sf::Event::MouseButtonReleased:
+                break;
+            case sf::Event::MouseMoved:
+                break;
+            default:
+                break;
         }
-        case sf::Event::MouseButtonReleased:
-            break;
-        case sf::Event::MouseMoved:
-            break;
-        default:
-            break;
     }
     m_bezier.update(event, windowSize);
 }

@@ -21,7 +21,7 @@ class Interface : public Renderable
         Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop);
         
         /* Renderable interface */
-        void update(sf::Event &event, const sf::Vector2f &windowSize);
+        void update(sf::Event *event, const sf::Vector2f &windowSize);
         void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
 };
 

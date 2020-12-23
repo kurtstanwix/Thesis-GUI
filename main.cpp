@@ -90,15 +90,18 @@ int main(int argc, char **argv)
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::Closed)
                     window.close();
-                else {
-                    networkWindow.update(event, windowSize);
-                }
+                else
+                    networkWindow.update(&event, windowSize);
             }
+            networkWindow.update(nullptr, windowSize);
+            window.clear();
+            networkWindow.render(window, windowSize);
+            window.display();
+            
             oldTime = system_clock::now();
         }
-        window.clear();
-        networkWindow.render(window, windowSize);
-        window.display();
+        
+        //networkWindow.render(window, windowSize);
         /*
         */
     }
