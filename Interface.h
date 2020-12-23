@@ -2,6 +2,7 @@
 #define _INTERFACE_H_ 1
 
 #include "SFML/Graphics.hpp"
+#include "BezierCurve.h"
 #include "NetworkTopology.h"
 #include "Renderable.h"
 
@@ -10,6 +11,8 @@ class Interface : public Renderable
     private:
         sf::RectangleShape m_exitButton;
         sf::RectangleShape m_saveButton;
+        
+        BezierCurve m_bezier;
         
         NetworkTopology &m_nettop;
     public:

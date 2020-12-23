@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Kurt Stanwix
-Date                   :=12/12/20
+Date                   :=12/24/20
 CodeLitePath           :=/home/kurt/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -61,7 +61,7 @@ AS       := /usr/bin/as
 ##
 CodeLiteDir:=/usr/share/codelite
 LD_LIBRARY_PATH:=$HOME/Desktop/madp/lib
-Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix) 
 
 
 
@@ -123,6 +123,14 @@ $(IntermediateDirectory)/NetworkWindow.cpp$(DependSuffix): NetworkWindow.cpp
 
 $(IntermediateDirectory)/NetworkWindow.cpp$(PreprocessSuffix): NetworkWindow.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/NetworkWindow.cpp$(PreprocessSuffix) NetworkWindow.cpp
+
+$(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix): BezierCurve.cpp $(IntermediateDirectory)/BezierCurve.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/BezierCurve.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/BezierCurve.cpp$(DependSuffix): BezierCurve.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/BezierCurve.cpp$(DependSuffix) -MM BezierCurve.cpp
+
+$(IntermediateDirectory)/BezierCurve.cpp$(PreprocessSuffix): BezierCurve.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/BezierCurve.cpp$(PreprocessSuffix) BezierCurve.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

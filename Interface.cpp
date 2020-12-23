@@ -1,10 +1,13 @@
 #include "Interface.h"
 
 #include <iostream>
+#include <list>
 
 Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
     :
-        m_nettop(nettop) {
+        m_nettop(nettop),
+        m_bezier(4, {{0, 0}, {0.25, 0}, {0.5, 0}, {0.5, 0.25}, {0.5, 0.5}})
+{
     /* 1/20th (5%) of screen width and height */
     m_exitButton.setSize(windowSize / 20.0f);
     m_exitButton.setOrigin(m_exitButton.getSize() / 2.0f);
@@ -40,6 +43,7 @@ void Interface::update(sf::Event &event, const sf::Vector2f &windowSize) {
         default:
             break;
     }
+    m_bezier.update(event, windowSize);
 }
 
 void Interface::render(sf::RenderWindow &window,
@@ -49,6 +53,10 @@ void Interface::render(sf::RenderWindow &window,
     
     const sf::Vector2f &saveButtonSize = m_saveButton.getSize();
     m_saveButton.setPosition(saveButtonSize.x, saveButtonSize.y);
+    
+    if (m_bezier.isRenderable()) {
+        m_bezier.render(window, windowSize);
+    }
     
     window.draw(m_exitButton);
     window.draw(m_saveButton);

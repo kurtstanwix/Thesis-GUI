@@ -492,14 +492,15 @@ void NetworkTopology::update(sf::Event& event, const sf::Vector2f& windowSize)
             if (m_selectedNode != NULL) {
                 std::cout << "Mouse moved x: " << event.mouseMove.x << ", y: " << event.mouseMove.y << std::endl;
                 
-                m_selectedNode->x = pixelToUnit(windowSize.x, m_nodeWidth, event.mouseMove.x);
-                m_selectedNode->y = pixelToUnit(windowSize.y, m_nodeWidth, event.mouseMove.y);
+                m_selectedNode->x = pixelToUnit(windowSize.x, event.mouseMove.x);
+                m_selectedNode->y = pixelToUnit(windowSize.y, event.mouseMove.y);
             }
             break;
         case sf::Event::KeyPressed:
             if (event.key.code == sf::Keyboard::Delete) {
                 if (m_selectedNode != NULL) {
                     removeNode(*m_selectedNode);
+                    m_selectedNode = NULL;
                 }
             }
             
