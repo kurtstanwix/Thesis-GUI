@@ -3,63 +3,124 @@
 #include <iostream>
 #include <list>
 
+#include "plog/Log.h"
+
+#define BUTTON_LAYER 0
+#define SHAPE_LAYER 1
+
+InterfaceButton::InterfaceButton(std::string name,
+        const sf::Vector2f &windowSize,
+        void (*onClickCallback)(InterfaceButton &caller), Interface &parent)
+    :
+        m_name(name),
+        m_onClick(onClickCallback),
+        m_parent(parent)
+{
+    m_shape.setSize(windowSize / 20.0f);
+    m_shape.setOrigin(getSize() / 2.0f);
+}
+
+void InterfaceButton::render(sf::RenderWindow &window,
+        const sf::Vector2f &windowSize)
+{
+    m_shape.setPosition(m_pos);
+    window.draw(m_shape);
+}
+
+void InterfaceButton::update(sf::Event *event,
+        const sf::Vector2f &windowSize, bool clickedOn)
+{
+    PLOGD << "Button update";
+    if (event != nullptr) {
+        if (clickedOn && event->mouseButton.button == sf::Mouse::Left) {
+            m_onClick(*this);
+        }
+    }
+}
+
+bool InterfaceButton::contains(float x, float y)
+{
+    return m_shape.getGlobalBounds().contains(x, y);
+}
+
+void exitAction(InterfaceButton &caller)
+{
+    exit(0);
+}
+
+void saveAction(InterfaceButton &caller)
+{
+    PLOGI << "Saving";
+    caller.m_parent.m_nettop.save("../test2");
+}
+
+
+
+
+bool Interface::contains(float x, float y)
+{
+    for (iterator it = begin(); it != end(); ++it) {
+        if ((*it)->contains(x, y))
+            return true;
+    }
+    return false;
+}
+
 Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
     :
         m_nettop(nettop),
         m_bezier(4, {{0, 0}, {0.25, 0}, {0.5, 0}, {0.5, 0.25}, {0.5, 0.5}})
 {
-    /* 1/20th (5%) of screen width and height */
-    m_exitButton.setSize(windowSize / 20.0f);
-    m_exitButton.setOrigin(m_exitButton.getSize() / 2.0f);
-    m_exitButton.setFillColor(sf::Color(200, 30, 30));
-    m_exitButton.setOutlineColor(sf::Color::Black);
+    PLOGD << "Creating interface";
+    std::list<InterfaceButton>::iterator exit =
+            m_buttons.emplace(m_buttons.end(), "Exit", windowSize, &exitAction,
+            *this);
     
-    m_saveButton.setSize(windowSize / 20.0f);
-    m_saveButton.setOrigin(m_exitButton.getSize() / 2.0f);
-    m_saveButton.setFillColor(sf::Color(30, 200, 30));
-    m_saveButton.setOutlineColor(sf::Color::Black);
+    /* 1/20th (5%) of screen width and height */
+    exit->setFillColor(sf::Color(200, 30, 30));
+    exit->setOutlineColor(sf::Color::Black);
+    exit->m_pos = { windowSize.x - exit->getSize().x, exit->getSize().y };
+    
+    std::list<InterfaceButton>::iterator save =
+            m_buttons.emplace(m_buttons.end(), "Save", windowSize, &saveAction,
+            *this);
+    save->setFillColor(sf::Color(30, 200, 30));
+    save->setOutlineColor(sf::Color::Black);
+    save->m_pos = { save->getSize().x, save->getSize().y };
+    
+    addLayer(BUTTON_LAYER);
+    addLayer(SHAPE_LAYER);
+    
+    addToLayer(BUTTON_LAYER, *exit);
+    addToLayer(BUTTON_LAYER, *save);
+    addToLayer(SHAPE_LAYER, m_bezier);
     
     m_renderable = true;
 }
 
-void Interface::update(sf::Event *event, const sf::Vector2f &windowSize) {
+void Interface::update(sf::Event *event, const sf::Vector2f &windowSize,
+        bool clickedOn)
+{
+    PLOGD << "Updating interface";
     if (event != nullptr) {
-        switch (event->type) {
-            case sf::Event::MouseButtonPressed:
-            {
-                if (m_exitButton.getGlobalBounds().contains(event->mouseButton.x,
-                        event->mouseButton.y)) {
-                        exit(0);
-                } else if (m_saveButton.getGlobalBounds().contains(event->mouseButton.x,
-                        event->mouseButton.y)) {
-                        std::cout << "Saving" << std::endl;
-                        m_nettop.save("../test2");
-                }
-                break;
+        for (iterator it = begin(); it != end(); ++it) {
+            PLOGD<<"Iterate";
+            if (event->type == sf::Event::MouseButtonPressed &&
+                    (*it)->contains(event->mouseButton.x, event->mouseButton.y)) {
+                PLOGD<<"TRUE";
+                (*it)->update(event, windowSize, true);
+            } else {
+                PLOGD<<"FALSE";
+                (*it)->update(event, windowSize, false);
             }
-            case sf::Event::MouseButtonReleased:
-                break;
-            case sf::Event::MouseMoved:
-                break;
-            default:
-                break;
         }
     }
-    m_bezier.update(event, windowSize);
 }
 
 void Interface::render(sf::RenderWindow &window,
         const sf::Vector2f &windowSize) {
-    const sf::Vector2f &exitButtonSize = m_exitButton.getSize();
-    m_exitButton.setPosition(windowSize.x - exitButtonSize.x, exitButtonSize.y);
-    
-    const sf::Vector2f &saveButtonSize = m_saveButton.getSize();
-    m_saveButton.setPosition(saveButtonSize.x, saveButtonSize.y);
-    
-    if (m_bezier.isRenderable()) {
-        m_bezier.render(window, windowSize);
+    PLOGD << "Rendering interface";
+    for (reverse_iterator it = rbegin(); it != rend(); ++it) {
+        (*it)->render(window, windowSize);
     }
-    
-    window.draw(m_exitButton);
-    window.draw(m_saveButton);
 }

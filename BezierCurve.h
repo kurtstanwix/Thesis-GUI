@@ -19,8 +19,12 @@ public:
         //virtual ~Segment() {};
         Segment(const sf::Vector2f &pos);
         /* Renderable interface */
-        void update(sf::Event *event, const sf::Vector2f &windowSize);
+        void update(sf::Event *event, const sf::Vector2f &windowSize,
+                bool clickedOn = false);
         void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
+        bool contains(float x, float y);
+    protected:
+        void streamOut(std::ostream& os) const;
     };
     
     struct Handle : public Renderable
@@ -30,22 +34,24 @@ public:
         sf::RectangleShape m_shape;
         bool m_selected;
         sf::Vector2f m_lastDragPos;
-        float m_rot;
         float m_length;
         
         Handle();
         //virtual ~Handle() {};
         Handle(const sf::Vector2f &pos);
         /* Renderable interface */
-        void update(sf::Event *event, const sf::Vector2f &windowSize);
+        void update(sf::Event *event, const sf::Vector2f &windowSize,
+                bool clickedOn = false);
         void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
+        bool contains(float x, float y);
+    protected:
+        void streamOut(std::ostream& os) const;
     };
     
     sf::Color m_color;
     float m_width;
     
     bool m_constructed;
-    bool m_moving;
     bool m_selected;
     //std::list<Handle> m_handles;
     
@@ -93,10 +99,24 @@ public:
     
     void setWidth(const float width) { m_width = width; };
     float getWidth() { return m_width; };
+    
+    sf::Vector2f getDominantHandleEnd()
+    {
+        return std::next(m_handles.rbegin())->m_pos;
+    }
+    
+    sf::Vector2f getDominantHandleStart()
+    {
+        return std::next(m_handles.begin())->m_pos;
+    }
 
     /* Renderable interface */
-    void update(sf::Event *event, const sf::Vector2f &windowSize);
+    void update(sf::Event *event, const sf::Vector2f &windowSize,
+            bool clickedOn = false);
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
+    bool contains(float x, float y);
+protected:
+    void streamOut(std::ostream& os) const;
 };
 
 #endif

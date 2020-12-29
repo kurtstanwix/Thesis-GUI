@@ -13,7 +13,7 @@ CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Kurt Stanwix
-Date                   :=12/24/20
+Date                   :=12/30/20
 CodeLitePath           :=/home/kurt/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -61,7 +61,7 @@ AS       := /usr/bin/as
 ##
 CodeLiteDir:=/usr/share/codelite
 LD_LIBRARY_PATH:=$HOME/Desktop/madp/lib
-Objects0=$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix) 
+Objects0=$(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkTopology.cpp$(ObjectSuffix) $(IntermediateDirectory)/NetworkWindow.cpp$(ObjectSuffix) $(IntermediateDirectory)/BezierCurve.cpp$(ObjectSuffix) $(IntermediateDirectory)/Tests.cpp$(ObjectSuffix) $(IntermediateDirectory)/main.cpp$(ObjectSuffix) 
 
 
 
@@ -92,14 +92,6 @@ PreBuild:
 ##
 ## Objects
 ##
-$(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
-	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
-$(IntermediateDirectory)/main.cpp$(DependSuffix): main.cpp
-	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/main.cpp$(DependSuffix) -MM main.cpp
-
-$(IntermediateDirectory)/main.cpp$(PreprocessSuffix): main.cpp
-	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.cpp$(PreprocessSuffix) main.cpp
-
 $(IntermediateDirectory)/Interface.cpp$(ObjectSuffix): Interface.cpp $(IntermediateDirectory)/Interface.cpp$(DependSuffix)
 	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/Interface.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Interface.cpp$(ObjectSuffix) $(IncludePath)
 $(IntermediateDirectory)/Interface.cpp$(DependSuffix): Interface.cpp
@@ -131,6 +123,22 @@ $(IntermediateDirectory)/BezierCurve.cpp$(DependSuffix): BezierCurve.cpp
 
 $(IntermediateDirectory)/BezierCurve.cpp$(PreprocessSuffix): BezierCurve.cpp
 	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/BezierCurve.cpp$(PreprocessSuffix) BezierCurve.cpp
+
+$(IntermediateDirectory)/Tests.cpp$(ObjectSuffix): Tests.cpp $(IntermediateDirectory)/Tests.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/Tests.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/Tests.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/Tests.cpp$(DependSuffix): Tests.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/Tests.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/Tests.cpp$(DependSuffix) -MM Tests.cpp
+
+$(IntermediateDirectory)/Tests.cpp$(PreprocessSuffix): Tests.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/Tests.cpp$(PreprocessSuffix) Tests.cpp
+
+$(IntermediateDirectory)/main.cpp$(ObjectSuffix): main.cpp $(IntermediateDirectory)/main.cpp$(DependSuffix)
+	$(CXX) $(IncludePCH) $(SourceSwitch) "/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest/main.cpp" $(CXXFLAGS) $(ObjectSwitch)$(IntermediateDirectory)/main.cpp$(ObjectSuffix) $(IncludePath)
+$(IntermediateDirectory)/main.cpp$(DependSuffix): main.cpp
+	@$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) -MG -MP -MT$(IntermediateDirectory)/main.cpp$(ObjectSuffix) -MF$(IntermediateDirectory)/main.cpp$(DependSuffix) -MM main.cpp
+
+$(IntermediateDirectory)/main.cpp$(PreprocessSuffix): main.cpp
+	$(CXX) $(CXXFLAGS) $(IncludePCH) $(IncludePath) $(PreprocessOnlySwitch) $(OutputSwitch) $(IntermediateDirectory)/main.cpp$(PreprocessSuffix) main.cpp
 
 
 -include $(IntermediateDirectory)/*$(DependSuffix)

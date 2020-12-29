@@ -28,13 +28,26 @@ int main(int argc, char **argv)
 #include <ctime>
 #include <stdlib.h>
 
+#include "plog/Log.h"
+#include "plog/Init.h"
+#include "plog/Formatters/TxtFormatter.h"
+#include "plog/Appenders/ConsoleAppender.h"
+
 #include "SFML/Graphics.hpp"
+
+#include "LayeredRenderable.h"
 #include "NetworkWindow.h"
 
+
+#include "Config.h"
+#include "NetworkTopology.h"
 
 
 using namespace std;
 
+
+
+//int main(int argc, char **argv);
 
 // Program documentation
 /*
@@ -49,15 +62,17 @@ static char doc[] =
 ";
 */
 
-
 typedef pair<size_t, size_t> sizePair;
 
 string actions[] = {"UP", "DOWN", "LEFT", "RIGHT"};
 
+#if _TEST_ == 0
 int main(int argc, char **argv)
 {
-    using namespace std::chrono;
+    static plog::ConsoleAppender<plog::TxtFormatter> debugConsole;
+    plog::init(plog::debug, &debugConsole);
     
+    using namespace std::chrono;
     
     int squareWidth = 100;
     int width = 1200;
@@ -68,8 +83,7 @@ int main(int argc, char **argv)
     
     srand(time(0));
     
-    NetworkWindow networkWindow(20, squareWidth,
-            sf::Vector2f(window.getSize()));
+    NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
     
     //window.setPosition(sf::Vector2i(50, 50));
     
@@ -77,6 +91,12 @@ int main(int argc, char **argv)
     system_clock::time_point oldTime = system_clock::now();
 
     int ticks = 0;
+    
+    
+    
+    
+    
+    
     
     while (window.isOpen())
     {
@@ -102,8 +122,6 @@ int main(int argc, char **argv)
         }
         
         //networkWindow.render(window, windowSize);
-        /*
-        */
     }
     
     /*
@@ -330,3 +348,5 @@ int main(int argc, char **argv)
         window.display();
     }*/
 }
+
+#endif

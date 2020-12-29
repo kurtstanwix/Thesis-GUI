@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "plog/Log.h"
+
 #include "Interface.h"
 #include "NetworkTopology.h"
 
@@ -26,14 +28,20 @@ NetworkWindow::NetworkWindow(int numNodes, int nodeWidth,
 
 void NetworkWindow::render(sf::RenderWindow &window, const sf::Vector2f &windowSize)
 {
+    PLOGV << "Num components " << m_components.size();
     for (std::list<std::unique_ptr<Renderable>>::iterator it = m_components.begin();
             it != m_components.end(); it++) {
-        if (it->get()->isRenderable())
+        if (it->get()->isRenderable()) {
+            PLOGV << "Rendering to NetworkWindow";
             it->get()->render(window, windowSize);
+        } else {
+            PLOGV << "Not Renderable";
+        }
     }
 }
 
-void NetworkWindow::update(sf::Event *event, const sf::Vector2f &windowSize)
+void NetworkWindow::update(sf::Event *event, const sf::Vector2f &windowSize,
+        bool clickedOn)
 {
     for (std::list<std::unique_ptr<Renderable>>::iterator it = m_components.begin();
             it != m_components.end(); it++) {

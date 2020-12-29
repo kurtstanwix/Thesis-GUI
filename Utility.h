@@ -1,7 +1,11 @@
 #ifndef _UTILITY_H
 #define _UTILITY_H 1
 
+#include <cmath>
+
 #include "SFML/Graphics.hpp"
+
+#include "Config.h"
 
 inline std::ostream& operator<<(std::ostream& os, const sf::Vector2f& vec) {
     os << "(" << vec.x << "," << vec.y << ")";
@@ -39,12 +43,12 @@ inline sf::Vector& operator=(const ClassName& other)
 
 inline bool floatEquals(const float a, const float b)
 {
-    return std::abs(a - b) <= 0.01;
+    return std::abs(a - b) <= 0.01f;
 }
 
 inline bool floatEquals(const sf::Vector2f &a, const sf::Vector2f &b)
 {
-    return std::abs(a.x - b.x) <= 0.01 && std::abs(a.y - b.y) <= 0.01;
+    return std::abs(a.x - b.x) <= 0.01f && std::abs(a.y - b.y) <= 0.01f;
 }
 
 
@@ -96,6 +100,12 @@ inline float pixelToUnitVector(float max, int pixel)
 inline float capInitial(float max, int objectSize, float initial)
 {
     return initial * (1 - 2 * objectSize / max);
+}
+
+inline sf::Vector2f capInitial(const sf::Vector2f max, sf::Vector2f objectSize,
+        sf::Vector2f initial)
+{
+    return initial * (- 2.0f * objectSize / max + 1.0f);
 }
 
 #endif
