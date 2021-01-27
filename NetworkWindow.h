@@ -3,19 +3,22 @@
 
 #include <list>
 
-#include "Renderable.h"
+#include "LayeredRenderable.h"
 
-class NetworkWindow : public Renderable
+class NetworkWindow : public LayeredRenderable
 {
 private:
-    std::list<std::unique_ptr<Renderable>> m_components;
+    std::list<std::reference_wrapper<Renderable>> m_components;
     
 public:
     NetworkWindow(int numNodes, int nodeWidth, const sf::Vector2f &windowSize);
-
+    
+    bool setNodeActive(int nodeID, bool state);
+    bool setLinkActive(int nodeID1, int nodeID2, bool state);
+    
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false);
+            bool &clickedOn);
     void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
     bool contains(float x, float y) { return false; };
 protected:

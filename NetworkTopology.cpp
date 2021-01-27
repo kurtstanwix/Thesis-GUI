@@ -45,7 +45,7 @@ NetworkTopology::Link::Link(Node &end1, Node &end2) :
 
 
 void NetworkTopology::Link::update(sf::Event *event,
-        const sf::Vector2f &windowSize, bool clickedOn) {
+        const sf::Vector2f &windowSize, bool &clickedOn) {
     shape.update(event, windowSize, clickedOn);
 }
 
@@ -225,27 +225,48 @@ void NetworkTopology::Node::init(int id, int width) {
     shape.setOrigin(width / 2, width / 2);
     shape.setFillColor(sf::Color(0, 0, 200));
     shape.setOutlineColor(sf::Color::Black);
+    m_label.setFont(FontManager::getInstance().getFont());
+    setText(m_label, "Node " + std::to_string(id));
     m_renderable = true;
     m_moving = false;
 }
 
 void NetworkTopology::Node::update(sf::Event *event,
-        const sf::Vector2f &windowSize, bool clickedOn)
+        const sf::Vector2f &windowSize, bool &clickedOn)
 {
     if (clickedOn) {
-        if (event->mouseButton.button == sf::Mouse::Left) {
-            PLOGD << "Right click on Node " << *this;
-            PLOGD << "Already activated: " << (activated ? "YES" : "NO");
-            activated = true;
-            m_moving = true;
-        } else if (event->mouseButton.button == sf::Mouse::Right) {
-            PLOGD << "Right click on Node " << *this;
-            PLOGD << "Already activated: " << (activated ? "YES" : "NO");
-            activated = false;
-        }
+        
     }
     if (event != nullptr) {
         switch (event->type) {
+            case sf::Event::MouseButtonPressed:
+            {
+                bool toDeselect = true;
+                if (!clickedOn) {
+                    if (contains(event->mouseButton.x, event->mouseButton.y)) {
+                        clickedOn = true;
+                        toDeselect = false;
+                        if (event->mouseButton.button == sf::Mouse::Left) {
+                            PLOGD << "Right click on Node " << *this;
+                            PLOGD << "Already activated: " <<
+                                    (activated ? "YES" : "NO");
+                            setActive(true);
+                            m_moving = true;
+                        } else if (event->mouseButton.button == sf::Mouse::Right) {
+                            PLOGD << "Right click on Node " << *this;
+                            PLOGD << "Already activated: " <<
+                                    (activated ? "YES" : "NO");
+                            setActive(false);
+                        }
+                    }
+                }
+                if (toDeselect && 
+                        !(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
+                        sf::Keyboard::isKeyPressed(sf::Keyboard::RControl))) {
+                    setActive(false);
+                }
+                break;
+            }
             case sf::Event::MouseButtonReleased:
                 m_moving = false;
                 break;
@@ -271,12 +292,24 @@ void NetworkTopology::Node::render(sf::RenderWindow &window,
         shape.setFillColor(sf::Color(0, 0, 200));
     
     shape.setPosition(unitToPixel(windowSize, m_pos));
+    m_label.setPosition(unitToPixel(windowSize, m_pos));
     window.draw(shape);
+    window.draw(m_label);
 }
 
 bool NetworkTopology::Node::contains(float x, float y)
 {
     return shape.getGlobalBounds().contains(x, y);
+}
+
+void NetworkTopology::Node::setActive(bool state)
+{
+    activated = state;
+    
+    for (std::list<std::reference_wrapper<Link>>::iterator it = links.begin();
+            it != links.end(); it++) {
+        it->get().activated = state;
+    }
 }
 
 //NetworkTopology::NetworkTopology()
@@ -437,7 +470,7 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
 NetworkTopology* NetworkTopology::createTopology(int numNodes,
         int nodeWidth, const sf::Vector2f &windowSize)
 {
-    std::ifstream i("../test1");
+    std::ifstream i("../gridNetwork.json");
     json j;
     i >> j;
     std::map<int, std::set<int>> nodeLinks;
@@ -564,45 +597,50 @@ void NetworkTopology::removeNode(Node &node) {
     delete &node;
 }
 
-void NetworkTopology::activateNode(Node &node) {
-    node.activated = true;
-    
-    for (std::list<std::reference_wrapper<Link>>::iterator it = node.links.begin();
-            it != node.links.end(); it++) {
-        it->get().activated = true;
-    }
+bool NetworkTopology::setNodeActive(int nodeID, bool state)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->setActive(state);
 }
 
-void NetworkTopology::deactivateNode(Node& node) {
-    node.activated = false;
-    
-    for (std::list<std::reference_wrapper<Link>>::iterator it = node.links.begin();
-            it != node.links.end(); it++) {
-        it->get().activated = false;
-    }
+bool NetworkTopology::setLinkActive(int nodeID1, int nodeID2, bool state)
+{
+    Node *node1 = getNode(nodeID1);
+    Node *node2 = getNode(nodeID2);
+    if (node1 == nullptr || node2 == nullptr)
+        return false;
+    Link *link = getLink(*node1, *node2);
+    if (link == nullptr)
+        return false;
+    link->setActive(state);
+    return true;
 }
-
 
 void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
-        bool clickedOn)
+        bool &clickedOn)
 {
-    bool mousePressEvent = false, clickedOnObject = false;
-    if (event != nullptr) {
-        if (event->type == sf::Event::MouseButtonPressed)
-            mousePressEvent = true;
-    }
+    //bool mousePressEvent = false, alreadyClickedAnObject = false;
+    //if (event != nullptr) {
+    //    if (event->type == sf::Event::MouseButtonPressed)
+    //        mousePressEvent = true;
+    //}
     for (iterator it = begin(); it != end(); ++it) {
-        bool clickedThisObject = false;
-        if (mousePressEvent && !clickedOnObject) {
+        //bool clickedThisObject = false;
+        /*if (mousePressEvent && !alreadyClickedAnObject) {
             if ((*it)->contains(event->mouseButton.x, event->mouseButton.y)) {
                 PLOGD << "Clicked on something";
-                clickedOnObject = true;
+                alreadyClickedAnObject = true;
                 clickedThisObject = true;
             }
-        }
-        (*it)->update(event, windowSize, clickedThisObject);
-        if (clickedThisObject) {
-            if (typeid(**it) == typeid(Node)) {
+        }*/
+        /* This will be true if another item has already processed a click
+         * event (it was on top of this object) */
+        //bool anotherItemClicked = clickedOn;
+        (*it)->update(event, windowSize, clickedOn);
+        //if (!anotherItemClicked && clickedOn) { /* This item was clicked */
+         /*   if (typeid(**it) == typeid(Node)) {
                 PLOGD << "It was a node";
                 Node *tmp = (Node*) *it;
                 if (tmp->activated)
@@ -610,7 +648,7 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
                 else
                     deactivateNode(*tmp);
             }
-        }
+        }*/
     }
     /*if (event != nullptr) {
         switch (event->type) {

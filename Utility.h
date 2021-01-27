@@ -7,6 +7,58 @@
 
 #include "Config.h"
 
+#include <SFML/Graphics/Font.hpp>
+
+/**
+ * @class FontManager
+ * @author Kurt Stanwix
+ * @date 01/25/21
+ * @file Config.h
+ * @brief A font manager implemented as a singleton.
+ */
+class FontManager
+{
+protected:
+    //FontManager
+    sf::Font m_font;
+    
+    FontManager() {
+        m_font.loadFromFile("../coolvetica rg.ttf");
+    };
+public:
+    static FontManager& getInstance()
+    {
+        static FontManager instance;
+        return instance;
+    };
+
+    /**
+     * Cannot clone a singleton
+     */
+    FontManager(FontManager &other) = delete;
+    void operator=(const FontManager &rhs) = delete;
+    
+    bool setFont(std::string &fileName)
+    {
+        if (m_font.loadFromFile(fileName))
+            return true;
+        return false;
+    };
+    
+    sf::Font& getFont()
+    {
+        return m_font;
+    };
+};
+
+inline void setText(sf::Text &text, const std::string &string)
+{
+    text.setString(string);
+    sf::FloatRect bounds = text.getLocalBounds();
+    text.setOrigin(bounds.width / 2 + bounds.left,
+            bounds.height / 2 + bounds.top);
+}
+
 inline std::ostream& operator<<(std::ostream& os, const sf::Vector2f& vec) {
     os << "(" << vec.x << "," << vec.y << ")";
     return os;

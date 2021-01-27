@@ -20,7 +20,7 @@ public:
         Segment(const sf::Vector2f &pos);
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
-                bool clickedOn = false);
+                bool &clickedOn);
         void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
         bool contains(float x, float y);
     protected:
@@ -41,7 +41,7 @@ public:
         Handle(const sf::Vector2f &pos);
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
-                bool clickedOn = false);
+                bool &clickedOn);
         void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
         bool contains(float x, float y);
     protected:
@@ -112,11 +112,13 @@ public:
 
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false);
+            bool &clickedOn);
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
     bool contains(float x, float y);
 protected:
     void streamOut(std::ostream& os) const;
+    
+    void setSelected(bool state);
 };
 
 #endif

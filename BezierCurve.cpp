@@ -27,7 +27,7 @@ BezierCurve::Segment::Segment(const sf::Vector2f &pos)
 }
 
 void BezierCurve::Segment::update(sf::Event *event,
-        const sf::Vector2f &windowSize, bool clickedOn)
+        const sf::Vector2f &windowSize, bool &clickedOn)
 {
 }
 
@@ -70,53 +70,39 @@ BezierCurve::Handle::Handle(const sf::Vector2f &pos)
     m_pos.y = pos.y;
 }
 
-bool BezierCurve::contains(float x, float y)
-{
-    for (std::list<Segment>::iterator it = m_segments.begin();
-            it != m_segments.end(); it++) {
-        if (it->contains(x, y))
-            return true;
-    }
-    /* Handles are only included if the curve is selected */
-    if (m_selected) {
-        for (std::list<Handle>::iterator it = m_handles.begin();
-                it != m_handles.end(); it++) {
-            if (it->contains(x, y)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 void BezierCurve::Handle::update(sf::Event *event,
-        const sf::Vector2f &windowSize, bool clickedOn)
+        const sf::Vector2f &windowSize, bool &clickedOn)
 {
-    /* Can't interact with if not visible */
-    if (!isRenderable())
-        return;
-    if (clickedOn) {
-        PLOGD << "asdasdghjahsfghjagsfjhgajfsgajsfg";
-        if (contains(event->mouseButton.x, event->mouseButton.y)) {
-            /* LMB to highlight handle (drag to move),
-             * RMB to unhighlight */
-            if (event->mouseButton.button == sf::Mouse::Left) {
-                m_selected = true;
-                m_moving = true;
-                //m_lastDragPos.x = event->mouseButton.x;
-                //m_lastDragPos.y = event->mouseButton.y;
-            } else if (event->mouseButton.button == sf::Mouse::Right) {
-                m_selected = false;
-            }
-        }
-    }
     if(event != nullptr) {
         switch (event->type) {
+            case sf::Event::MouseButtonPressed:
+                /* Can't interact with if not visible */
+                if (isRenderable() && !clickedOn) {
+                    PLOGI << "asdasdghjahsfghjagsfjhgajfsgajsfg";
+                    if (contains(event->mouseButton.x, event->mouseButton.y)) {
+                        PLOGI << "Handle contains mouse";
+                        clickedOn = true;
+                        /* LMB to highlight handle (drag to move),
+                         * RMB to unhighlight */
+                        if (event->mouseButton.button == sf::Mouse::Left) {
+                            m_selected = true;
+                            m_moving = true;
+                            //m_lastDragPos.x = event->mouseButton.x;
+                            //m_lastDragPos.y = event->mouseButton.y;
+                        } else if (event->mouseButton.button == sf::Mouse::Right) {
+                            m_selected = false;
+                        }
+                    }
+                }
+                break;
             case sf::Event::MouseButtonReleased:
+                PLOGI << "Release that handle";
                 m_moving = false;
                 break;
             case sf::Event::MouseMoved:
-                if (m_moving) {
+                /* Can't interact with if not visible */
+                if (isRenderable() && m_moving) {
+                    PLOGI << "Moving Bezier handle";
                     /* Clicked on and dragged, move with the mouse */
                     //sf::Vector2f delta = pixelToUnitVector(windowSize,
                     //        sf::Vector2f(event->mouseMove.x, event->mouseMove.y) -
@@ -269,6 +255,25 @@ void BezierCurve::ConstructCurve()
     std::cout << "Rendered " << i << " shapes" << std::endl;
 }
 
+bool BezierCurve::contains(float x, float y)
+{
+    for (std::list<Segment>::iterator it = m_segments.begin();
+            it != m_segments.end(); it++) {
+        if (it->contains(x, y))
+            return true;
+    }
+    /* Handles are only included if the curve is selected */
+    if (m_selected) {
+        for (std::list<Handle>::iterator it = m_handles.begin();
+                it != m_handles.end(); it++) {
+            if (it->contains(x, y)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSize)
 {
     sf::Color fillColor;
@@ -315,7 +320,7 @@ void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSiz
 }
 
 void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
-        bool clickedOn)
+        bool &clickedOn)
 {
     if (!m_constructed)
         ConstructCurve();
@@ -326,7 +331,7 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
             it != m_handles.end(); it++) {
         it->update(event, windowSize, clickedOn);
         if (it->isMoving()) {
-            PLOGD<<"HOW";
+            PLOGI<<"HOW";
             selectedHandle = true;
             /* Only select one to prevent issues with dragging multiple
              * overlapping points */
@@ -334,32 +339,34 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
         }
     }
     
-    if (clickedOn && !selectedHandle) {
-        PLOGD<<"Dooooing";
-        if (event->mouseButton.button == sf::Mouse::Left) {
-            m_moving = true;
-            m_lastDragPos.x = event->mouseButton.x;
-            m_lastDragPos.y = event->mouseButton.y;
-            
-            m_selected = true;
-            /* Only render handles when selected */
-            for (std::list<Handle>::iterator it = m_handles.begin();
-                    it != m_handles.end(); it++) {
-                //if (it != m_handles.begin() && it != std::prev(m_handles.end())) {
-                    it->setRenderable(true);
-                //}
-            }
-        } else if (event->mouseButton.button == sf::Mouse::Right) {
-            m_selected = false;
-            /* Only render handles when selected */
-            for (std::list<Handle>::iterator it = m_handles.begin();
-                    it != m_handles.end(); it++) {
-                it->setRenderable(false);
-            }
-        }
-    }
     if (event != nullptr) {
         switch (event->type) {
+            case sf::Event::MouseButtonPressed:
+            {
+                bool toDeselect = !selectedHandle;
+                /* If a handle wasn't selected, check if the remainder was */
+                if (!clickedOn && !selectedHandle) {
+                    PLOGD<<"Dooooing";
+                    if (contains(event->mouseButton.x, event->mouseButton.y)) {
+                        clickedOn = true;
+                        if (event->mouseButton.button == sf::Mouse::Left) {
+                            toDeselect = false;
+                            m_moving = true;
+                            m_lastDragPos.x = event->mouseButton.x;
+                            m_lastDragPos.y = event->mouseButton.y;
+                            setSelected(true);
+                        } else if (event->mouseButton.button == sf::Mouse::Right) {
+                            setSelected(false);
+                        }
+                    }
+                }
+                if (toDeselect &&
+                        !(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
+                        sf::Keyboard::isKeyPressed(sf::Keyboard::RControl))) {
+                    setSelected(false);
+                }
+                break;
+            }
             case sf::Event::MouseButtonReleased:
                 m_moving = false;
                 break;
@@ -412,5 +419,17 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
                         break;
                 }
         }
+    }
+}
+
+void BezierCurve::setSelected(bool state)
+{
+    m_selected = state;
+    /* Only render handles when selected */
+    for (std::list<Handle>::iterator it = m_handles.begin();
+            it != m_handles.end(); it++) {
+        //if (it != m_handles.begin() && it != std::prev(m_handles.end())) {
+            it->setRenderable(state);
+        //}
     }
 }

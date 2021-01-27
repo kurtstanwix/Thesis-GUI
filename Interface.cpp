@@ -5,6 +5,8 @@
 
 #include "plog/Log.h"
 
+#include "Utility.h"
+
 #define BUTTON_LAYER 0
 #define SHAPE_LAYER 1
 
@@ -18,23 +20,32 @@ InterfaceButton::InterfaceButton(std::string name,
 {
     m_shape.setSize(windowSize / 20.0f);
     m_shape.setOrigin(getSize() / 2.0f);
+    m_label.setFont(FontManager::getInstance().getFont());
+    setText(m_label, name);
 }
 
 void InterfaceButton::render(sf::RenderWindow &window,
         const sf::Vector2f &windowSize)
 {
     m_shape.setPosition(m_pos);
+    m_label.setPosition(m_pos);
     window.draw(m_shape);
+    window.draw(m_label);
 }
 
 void InterfaceButton::update(sf::Event *event,
-        const sf::Vector2f &windowSize, bool clickedOn)
+        const sf::Vector2f &windowSize, bool &clickedOn)
 {
     PLOGD << "Button update";
     if (event != nullptr) {
-        if (clickedOn && event->mouseButton.button == sf::Mouse::Left) {
-            m_onClick(*this);
-        }
+        if (!clickedOn && event->type == sf::Event::MouseButtonPressed &&
+                contains(event->mouseButton.x, event->mouseButton.y)) {
+            PLOGD<<"TRUE";
+            clickedOn = true;
+            if (event->mouseButton.button == sf::Mouse::Left)
+                m_onClick(*this);
+        } else
+            PLOGD<<"FALSE";
     }
 }
 
@@ -99,21 +110,12 @@ Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
 }
 
 void Interface::update(sf::Event *event, const sf::Vector2f &windowSize,
-        bool clickedOn)
+        bool &clickedOn)
 {
     PLOGD << "Updating interface";
-    if (event != nullptr) {
-        for (iterator it = begin(); it != end(); ++it) {
-            PLOGD<<"Iterate";
-            if (event->type == sf::Event::MouseButtonPressed &&
-                    (*it)->contains(event->mouseButton.x, event->mouseButton.y)) {
-                PLOGD<<"TRUE";
-                (*it)->update(event, windowSize, true);
-            } else {
-                PLOGD<<"FALSE";
-                (*it)->update(event, windowSize, false);
-            }
-        }
+    for (iterator it = begin(); it != end(); ++it) {
+        PLOGD<<"Iterate";
+        (*it)->update(event, windowSize, clickedOn);
     }
 }
 

@@ -13,6 +13,7 @@ class InterfaceButton : public Renderable
 {
 private:
     sf::RectangleShape m_shape;
+    sf::Text m_label;
     std::string m_name;
     void (*m_onClick)(InterfaceButton &caller);
     
@@ -47,7 +48,7 @@ public:
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false);
+            bool &clickedOn);
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
     bool contains(float x, float y);
 protected:
@@ -68,7 +69,7 @@ public:
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false);
+            bool &clickedOn);
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
     bool contains(float x, float y);
 protected:

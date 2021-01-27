@@ -22,6 +22,8 @@ int main(int argc, char **argv)
  * For contact information please see the included AUTHORS file.
  */
 
+#include <limits.h>
+
 #include <iostream>
 
 #include <chrono>
@@ -69,8 +71,13 @@ string actions[] = {"UP", "DOWN", "LEFT", "RIGHT"};
 #if _TEST_ == 0
 int main(int argc, char **argv)
 {
+    
+    char result[ PATH_MAX ];
+    ssize_t count = readlink( "/proc/self/exe", result, PATH_MAX );
+    cout << std::string( result, (count > 0) ? count : 0 ) << endl;
+    
     static plog::ConsoleAppender<plog::TxtFormatter> debugConsole;
-    plog::init(plog::debug, &debugConsole);
+    plog::init(plog::info, &debugConsole);
     
     using namespace std::chrono;
     
@@ -93,11 +100,8 @@ int main(int argc, char **argv)
     int ticks = 0;
     
     
-    
-    
-    
-    
-    
+    int nodeId = 5;
+    //networkWindow.setNodeActive(nodeId, true);
     while (window.isOpen())
     {
         sf::Vector2f windowSize(window.getSize());
@@ -107,21 +111,30 @@ int main(int argc, char **argv)
             //std::cout << "tick" << std::endl;
             // Update logic
             sf::Event event;
+            bool clickedOn = false;
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::Closed)
                     window.close();
                 else
-                    networkWindow.update(&event, windowSize);
+                    networkWindow.update(&event, windowSize, clickedOn);
             }
-            networkWindow.update(nullptr, windowSize);
-            window.clear();
-            networkWindow.render(window, windowSize);
-            window.display();
+            networkWindow.update(nullptr, windowSize, clickedOn);
+            /*if (ticks % 120 == 0) {
+                networkWindow.setNodeActive(nodeId, false);
+                if (++nodeId == 15)
+                    nodeId = 5;
+                networkWindow.setNodeActive(nodeId, true);
+            }*/
+            //window.clear();
+            //networkWindow.render(window, windowSize);
+            //window.display();
             
             oldTime = system_clock::now();
         }
         
-        //networkWindow.render(window, windowSize);
+        window.clear();
+        networkWindow.render(window, windowSize);
+        window.display();
     }
     
     /*

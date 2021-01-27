@@ -74,7 +74,7 @@ public:
  */
 class LayeredRenderable : public Renderable
 {
-public:
+private:
     std::map<int, Layer> m_layers;
     
 public:
@@ -207,7 +207,7 @@ public:
     }
 
     virtual void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false) = 0;
+            bool &clickedOn) = 0;
     
     virtual void render(sf::RenderWindow& window,
             const sf::Vector2f &windowSize) = 0;
@@ -272,6 +272,15 @@ public:
     std::map<int, Layer>::size_type getNumLayers() const
     {
         return m_layers.size();
+    }
+    
+    Layer* getLayer(int layerID)
+    {
+        try {
+            return &m_layers.at(layerID);
+        } catch(const std::out_of_range &e) {
+            return nullptr;
+        }
     }
 protected:
     LayeredRenderable()

@@ -30,9 +30,16 @@ private:
     Link* getLink(Node& n1, Node& n2);
     Link* addLink(Node& n1, Node& n2);
     void removeNode(Node &node);
-    void activateNode(Node& node);
-    void deactivateNode(Node& node);
     
+    Node* getNode(int id) {
+        for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
+                it != m_nodes.end(); it++) {
+            if (id == it->get().id) {
+                return &it->get();
+            }
+        }
+        return NULL;
+    }
     
     struct Node : public Renderable {
         //Node(int id) : id(id) {}
@@ -40,6 +47,7 @@ private:
         sf::Vector2f m_pos; // in unit coordinates
         std::list<std::reference_wrapper<Link>> links;
         sf::RectangleShape shape;
+        sf::Text m_label;
         bool activated;
         
         void init(int id, int width);
@@ -47,9 +55,11 @@ private:
         Node(int id, int width);
         //virtual ~Node();
         
+        void setActive(bool state);
+        
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
-                bool clickedOn = false);
+                bool &clickedOn);
         void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
         bool contains(float x, float y);
         
@@ -74,6 +84,11 @@ private:
         bool m_isBidirectional;
         bool activated;
         
+        void setActive(bool state)
+        {
+            activated = state;
+        }
+        
         Node& getOtherEnd(Node& n) const {
             if (&m_ends[0].get() == &n) {
                 return m_ends[1];
@@ -91,7 +106,7 @@ private:
         
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
-                bool clickedOn = false);
+                bool &clickedOn);
         void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
         bool contains(float x, float y);
         
@@ -117,21 +132,16 @@ public:
     //NetworkTopology(NetworkTopology&& source) = default;
     static NetworkTopology* createTopology(int numNodes, int nodeWidth,
             const sf::Vector2f &windowSize);
-    Node* getNode(int id) {
-        for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
-                it != m_nodes.end(); it++) {
-            if (id == it->get().id) {
-                return &it->get();
-            }
-        }
-        return NULL;
-    }
+    
     void save(const std::string &fileName);
     void print();
     
+    bool setNodeActive(int nodeID, bool state);
+    bool setLinkActive(int nodeID1, int nodeID2, bool state);
+    
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
-            bool clickedOn = false);
+            bool &clickedOn);
     void render(sf::RenderWindow& window, const sf::Vector2f &windowSize);
     bool contains(float x, float y) { return false; };
 protected:
