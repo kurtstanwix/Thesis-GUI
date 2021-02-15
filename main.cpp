@@ -64,6 +64,21 @@ static char doc[] =
 ";
 */
 
+#include "InfoPane.h"
+
+
+#include "Interface.h"
+void exitAction(InterfaceButton &caller)
+{
+    //exit(0);
+}
+
+void saveAction(InterfaceButton &caller)
+{
+    //PLOGI << "Saving";
+    //caller.m_parent.m_nettop.save("../test2");
+}
+
 typedef pair<size_t, size_t> sizePair;
 
 string actions[] = {"UP", "DOWN", "LEFT", "RIGHT"};
@@ -77,7 +92,7 @@ int main(int argc, char **argv)
     cout << std::string( result, (count > 0) ? count : 0 ) << endl;
     
     static plog::ConsoleAppender<plog::TxtFormatter> debugConsole;
-    plog::init(plog::info, &debugConsole);
+    plog::init(plog::debug, &debugConsole);
     
     using namespace std::chrono;
     
@@ -90,7 +105,9 @@ int main(int argc, char **argv)
     
     srand(time(0));
     
-    NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
+    //NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
+    
+    InfoPane info;
     
     //window.setPosition(sf::Vector2i(50, 50));
     
@@ -116,9 +133,9 @@ int main(int argc, char **argv)
                 if (event.type == sf::Event::Closed)
                     window.close();
                 else
-                    networkWindow.update(&event, windowSize, clickedOn);
+                    info.update(&event, windowSize, clickedOn);
             }
-            networkWindow.update(nullptr, windowSize, clickedOn);
+            info.update(nullptr, windowSize, clickedOn);
             /*if (ticks % 120 == 0) {
                 networkWindow.setNodeActive(nodeId, false);
                 if (++nodeId == 15)
@@ -133,7 +150,7 @@ int main(int argc, char **argv)
         }
         
         window.clear();
-        networkWindow.render(window, windowSize);
+        info.render(window, windowSize);
         window.display();
     }
     

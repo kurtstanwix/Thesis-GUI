@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <fstream>
+#include <sstream>
 #include <stdlib.h>
 #include <set>
 #include <typeinfo>
@@ -27,9 +28,17 @@ NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
 
 NetworkTopology::Link::Link(Node &end1, Node &end2) :
         m_ends({end1, end2}),
+        m_isBidirectional(false),
+        activated(false),
         endArrows(m_ends.size()),
         shape(40, {end1.shape.getPosition(),
-                (end1.m_pos + end2.m_pos) / 2.0f,
+                sf::Vector2f((end1.m_pos.x + end2.m_pos.x) / 2.0f + 
+                        std::sin(std::atan2(end1.m_pos.y - end2.m_pos.y,
+                                end1.m_pos.x - end2.m_pos.x)) / 6.0f,
+                        (end1.m_pos.y + end2.m_pos.y) / 2.0f -
+                        std::cos(std::atan2(end1.m_pos.y - end2.m_pos.y,
+                                end1.m_pos.x - end2.m_pos.x)) / 6.0f),
+                
                 end2.shape.getPosition()})
 {
     std::cout << "Making link bezier " << end1.m_pos << " - " <<
@@ -57,7 +66,7 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
     } else {
         fillColor = sf::Color(125, 0, 0);
     }
-    shape.SetColor(fillColor);
+    //shape.SetColor(fillColor);
     
     std::vector<sf::Vector2f> endsPos;
     
@@ -96,11 +105,18 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
         
         //float overlapLength = std::sqrt(std::pow(offset.x, 2) + std::pow(offset.y, 2));
         
-        if (m_isBidirectional || i == 1) {
-            if (m_isBidirectional)
+        
+        endPos += offset;
+        
+        // This is for bidirectional links
+        //if (m_isBidirectional || i == 1) {
+        // This is for unidirection only links
+        if (i == 1) {
+            if (m_isBidirectional) {
+                PLOGI << "Bidirectional link";
                 fillColor = sf::Color::Magenta;
+            }
             
-            endPos += offset;
             
             endArrows[i].setRadius(r);
             endArrows[i].setFillColor(fillColor);
@@ -316,7 +332,7 @@ void NetworkTopology::Node::setActive(bool state)
 
 //Default constructor
 NetworkTopology::NetworkTopology(int numNodes, int nodeWidth,
-        const sf::Vector2f &windowSize)
+        const sf::Vector2f &windowSize, nodeLayout layout)
     :
         m_numNodes(numNodes),
         m_nodes(),
@@ -388,9 +404,10 @@ NetworkTopology::~NetworkTopology()
 }
 
 NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
-        int nodeWidth, const sf::Vector2f &windowSize)
+        int nodeWidth, const sf::Vector2f &windowSize, nodeLayout layout)
     :
         m_numNodes(nodeLinks.size()),
+        m_layout(layout),
         m_nodes(),
         m_nodeWidth(nodeWidth),
         m_selectedNode(NULL)
@@ -405,9 +422,64 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
         m_nodes.insert(*(new Node(it->first, nodeWidth)));
     }
     
+    
     /* Initial layout for nodes will be an evenly spaced circle */
     float divisionAngle = 2 * M_PI / m_numNodes;
+    
+    int largestSquare = int(std::sqrt(m_numNodes));
+    PLOGI << "square " << largestSquare;
+    int dist = m_numNodes - largestSquare * largestSquare;
     int i = 0;
+    for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
+            it != nodeLinks.end(); it++) {
+        Node *node = getNode(it->first);
+        switch (m_layout) {
+            case Circle:
+                /* Position in an evenly spaced circle */
+                std::cout << "Div: " << divisionAngle * i << std::endl;
+                node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
+                        {std::cos(divisionAngle * i), -std::sin(divisionAngle * i)});
+                break;
+            case Grid:
+                PLOGI << "Dist: " << dist;
+                sf::Vector2f pos;
+                if (dist == 0) { /* Num nodes makes a perfect square */
+                    pos.x = i % largestSquare;
+                    pos.y = i / largestSquare;
+                    std::stringstream ss;
+                    ss << pos;
+                    PLOGI << ss.str();
+                    pos = pos / (0.5f * (largestSquare - 1)) - 1.0f;
+                } else if (dist > largestSquare + 1) {
+                    /* Num nodes fill up all rows but the bottom */
+                    pos.x = i % (largestSquare + 1);
+                    pos.y = i / (largestSquare + 1);
+                    pos = pos / (0.5f * largestSquare) - 1.0f;
+                } else {
+                    if (i / (largestSquare + 1.0f) > dist) {
+                        pos.x = (i - dist) % largestSquare;
+                        pos.y = (i - dist) / largestSquare;
+                    } else {
+                        pos.x = i % (largestSquare + 1);
+                        pos.y = i / (largestSquare + 1);
+                    }
+                    pos.x = pos.x / (0.5f * largestSquare) - 1.0f;
+                    pos.y = pos.y / (0.5f * (largestSquare - 1)) - 1.0f;
+                }
+                node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
+                            pos);
+        }
+        
+        if (i == 0) {
+            std::cout << "width: " << nodeWidth << std::endl;
+            std::cout << "windowSize.x: " << windowSize.x << ", windowSize.y: " << windowSize.y << std::endl;
+            std::cout << "cos: " << std::cos(divisionAngle * i) << ", sin: " << -std::sin(divisionAngle * i) << std::endl;
+            std::cout << "pos: " << node->m_pos << std::endl;
+        }
+        i++;
+    }
+    
+    /* Add all the links between nodes */
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
         Node *node = getNode(it->first);
@@ -435,22 +507,8 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
             }
         }
         PLOGD << ss.str();
-        
-        /* Position in an evenly spaced circle */
-        std::cout << "Div: " << divisionAngle * i << std::endl;
-        node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
-                {std::cos(divisionAngle * i), -std::sin(divisionAngle * i)});
-        
-        if (i == 0) {
-            std::cout << "width: " << nodeWidth << std::endl;
-            std::cout << "windowSize.x: " << windowSize.x << ", windowSize.y: " << windowSize.y << std::endl;
-            std::cout << "cos: " << std::cos(divisionAngle * i) << ", sin: " << -std::sin(divisionAngle * i) << std::endl;
-            std::cout << "pos: " << node->m_pos << std::endl;
-        }
-        i++;
-        
-        
     }
+    
     
     m_renderable = true;
     
@@ -473,8 +531,13 @@ NetworkTopology* NetworkTopology::createTopology(int numNodes,
     std::ifstream i("../gridNetwork.json");
     json j;
     i >> j;
+    
+    nodeLayout layout = j["layout"];
+    PLOGI << "Layout " << layout;
+    
+    json nodes = j["nodes"];
     std::map<int, std::set<int>> nodeLinks;
-    for (json::const_iterator it = j.begin(); it != j.end(); it++) {
+    for (json::const_iterator it = nodes.begin(); it != nodes.end(); it++) {
         if (nodeLinks.insert(std::pair<int, std::set<int>>(
                 (*it)["id"],
                 (*it)["links"])).second == false) {
@@ -499,7 +562,8 @@ NetworkTopology* NetworkTopology::createTopology(int numNodes,
     
     PLOGD << "SIZE: " << nodeLinks.size();
     
-    NetworkTopology *test = new NetworkTopology(nodeLinks, nodeWidth, windowSize);
+    NetworkTopology *test = new NetworkTopology(nodeLinks, nodeWidth,
+            windowSize, layout);
     //NetworkTopology *test = new NetworkTopology(numNodes, nodeWidth, windowSize);
     for (std::list<std::reference_wrapper<Link>>::iterator it = test->m_links.begin();
             it != test->m_links.end(); it++) {
@@ -533,6 +597,7 @@ void NetworkTopology::save(const std::string &fileName) {
     out.close();
 }
 
+/* This is for bidirection links where link n1-n2 == n2-n1
 NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
     std::cout << std::endl << "Checking " << n1 << ", " << n2 << " exists ";
     for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
@@ -545,6 +610,18 @@ NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
     }
     return NULL;
 }
+*/
+// This is for unidirectional links where n1-n2 != n2-n1 (but both can exist)
+NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
+    std::cout << std::endl << "Checking " << n1 << ", " << n2 << " exists ";
+    for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
+            it != m_links.end(); it++) {
+        Link& l = it->get();
+        if (&l.m_ends[0].get() == &n1 && &l.m_ends[1].get() == &n2)
+            return &l;
+    }
+    return NULL;
+}
 
 NetworkTopology::Link* NetworkTopology::addLink(Node &n1, Node &n2) {
     Link *existingLink = getLink(n1, n2);
@@ -554,10 +631,14 @@ NetworkTopology::Link* NetworkTopology::addLink(Node &n1, Node &n2) {
         PLOGD << "Added Link: " << l;
         return &l;
     } else {
+        PLOGD << "Attempted to add the same link";
+        return nullptr;
+        /* Bi directional links
         PLOGD << "Link is Bidirectional: " << *existingLink;
         existingLink->m_isBidirectional = true;
         n1.links.push_back(*existingLink);
         return existingLink;
+        */
     }
 }
 

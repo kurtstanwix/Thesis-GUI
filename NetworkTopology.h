@@ -8,9 +8,18 @@
 #include <list>
 #include <memory>
 #include "SFML/Graphics.hpp"
+#include "SFML/Graphics/Font.hpp"
+#include "SFML/Graphics/Text.hpp"
 
 #include "BezierCurve.h"
 #include "LayeredRenderable.h"
+
+enum nodeLayout
+{
+    Custom = 0,
+    Circle = 1,
+    Grid = 2
+};
 
 class NetworkTopology : public LayeredRenderable
 {
@@ -21,6 +30,7 @@ private:
     int m_numNodes;
     std::set<std::reference_wrapper<Node>> m_nodes;
     int m_nodeWidth;
+    nodeLayout m_layout;
     
     std::list<std::reference_wrapper<Link>> m_links;
     
@@ -123,9 +133,10 @@ private:
     /// (default) Constructor
     // Private to avoid direct creation
     NetworkTopology(std::map<int, std::set<int>> nodeLinks,
-            int nodeWidth, const sf::Vector2f &windowSize);
+            int nodeWidth, const sf::Vector2f &windowSize,
+            nodeLayout layout = Circle);
     NetworkTopology(int numNodes, int nodeWidth,
-            const sf::Vector2f &windowSize);
+            const sf::Vector2f &windowSize, nodeLayout layout = Circle);
 public:
     ~NetworkTopology();
         

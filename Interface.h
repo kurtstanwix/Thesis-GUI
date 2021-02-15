@@ -8,6 +8,11 @@
 #include "Renderable.h"
 
 class Interface;
+class InterfaceButton;
+
+
+void exitAction(InterfaceButton &caller);
+void saveAction(InterfaceButton &caller);
 
 class InterfaceButton : public Renderable
 {

@@ -4,10 +4,16 @@
 #include <cmath>
 
 #include "SFML/Graphics.hpp"
+#include <plog/Log.h>
 
 #include "Config.h"
 
 #include <SFML/Graphics/Font.hpp>
+
+
+
+
+#include <iostream>
 
 /**
  * @class FontManager
@@ -84,6 +90,18 @@ inline sf::Vector2f operator/(sf::Vector2f const &lhs, sf::Vector2f const &rhs)
     return sf::Vector2f(lhs.x / rhs.x, lhs.y / rhs.y);
 }
 
+/* Color overloads */
+inline plog::Record& operator<<(plog::Record &record, const sf::Color &col)
+{
+    return record << "(" << unsigned(col.r) << "," << unsigned(col.g) << "," <<
+            unsigned(col.b) << "," << unsigned(col.a) << ")";
+}
+
+inline plog::Record& operator<<(plog::Record &record, const sf::Vector2f& vec)
+{
+    return record << "(" << vec.x << "," << vec.y << ")";
+}
+    
 /*
 inline sf::Vector& operator=(const ClassName& other)
 {

@@ -54,16 +54,6 @@ bool InterfaceButton::contains(float x, float y)
     return m_shape.getGlobalBounds().contains(x, y);
 }
 
-void exitAction(InterfaceButton &caller)
-{
-    exit(0);
-}
-
-void saveAction(InterfaceButton &caller)
-{
-    PLOGI << "Saving";
-    caller.m_parent.m_nettop.save("../test2");
-}
 
 
 
