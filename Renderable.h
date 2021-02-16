@@ -68,6 +68,7 @@ public:
     
 protected:
     bool m_moving;
+    sf::Vector2f m_lastDragPos;
     bool m_renderable;
     
     virtual void streamOut(std::ostream& os) const = 0;

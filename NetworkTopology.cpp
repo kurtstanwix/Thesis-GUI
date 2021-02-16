@@ -1,6 +1,6 @@
 #include "NetworkTopology.h"
 
-#include <ctime>
+//#include <ctime>
 #include <fstream>
 #include <sstream>
 #include <stdlib.h>
@@ -15,11 +15,13 @@
 #include "Utility.h"
 
 using json = nlohmann::json;
+using namespace std::chrono;
 
 #define INVALID_ID -1
 
-#define NODE_LAYER_ID 1
-#define LINK_LAYER_ID 0
+#define NODE_LAYER_ID 2
+#define LINK_LAYER_ID 1
+#define INFO_LAYER_ID 0
 
 NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
 
@@ -245,6 +247,7 @@ void NetworkTopology::Node::init(int id, int width) {
     setText(m_label, "Node " + std::to_string(id));
     m_renderable = true;
     m_moving = false;
+    m_lastClickTime = system_clock::now();
 }
 
 void NetworkTopology::Node::update(sf::Event *event,
@@ -268,6 +271,14 @@ void NetworkTopology::Node::update(sf::Event *event,
                                     (activated ? "YES" : "NO");
                             setActive(true);
                             m_moving = true;
+                            if (duration_cast<milliseconds>(
+                                    system_clock::now() -
+                                    m_lastClickTime).count() <
+                                    DOUBLE_CLICK_DURATION.count()) {
+                                m_info.setRenderable(true);
+                            }
+                            m_lastClickTime = system_clock::now();
+                            system_clock::time_point m_lastClickTime;
                         } else if (event->mouseButton.button == sf::Mouse::Right) {
                             PLOGD << "Right click on Node " << *this;
                             PLOGD << "Already activated: " <<
@@ -415,11 +426,12 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
     /* Set up the render/update layers */
     addLayer(NODE_LAYER_ID);
     addLayer(LINK_LAYER_ID);
+    addLayer(INFO_LAYER_ID);
     std::cout <<"GOOOOOD INIT" << std::endl;
     /* Need to add all nodes dynamically as they are around for lifetime of this */
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
-        m_nodes.insert(*(new Node(it->first, nodeWidth)));
+        addNode(*(new Node(it->first, nodeWidth)));
     }
     
     
@@ -470,6 +482,8 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                             pos);
         }
         
+        node->m_info.setPosition(unitToPixel(windowSize, node->m_pos));
+        
         if (i == 0) {
             std::cout << "width: " << nodeWidth << std::endl;
             std::cout << "windowSize.x: " << windowSize.x << ", windowSize.y: " << windowSize.y << std::endl;
@@ -488,7 +502,7 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
             PLOGW << "Node " << it->first << " not found";
             continue;
         }
-        addToLayer(NODE_LAYER_ID, *node);
+        //addToLayer(NODE_LAYER_ID, *node);
         std::stringstream ss;
         ss << "NodeNum: " << *node;
         //std::set<int> linkIndices;
@@ -501,9 +515,6 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                 //std::cout << ", " << linkIndex;
                 Link &link = *addLink(*node, *linkedNode);
                 ss << ", " << *iit;
-                if (linkedNode == &link.m_ends[1].get()) {
-                    addToLayer(LINK_LAYER_ID, link);
-                }
             }
         }
         PLOGD << ss.str();
@@ -628,6 +639,7 @@ NetworkTopology::Link* NetworkTopology::addLink(Node &n1, Node &n2) {
     if (existingLink == NULL) {
         Link &l = *(new Link(n1, n2));
         m_links.push_back(l);
+        addToLayer(LINK_LAYER_ID, l);
         PLOGD << "Added Link: " << l;
         return &l;
     } else {
@@ -640,6 +652,15 @@ NetworkTopology::Link* NetworkTopology::addLink(Node &n1, Node &n2) {
         return existingLink;
         */
     }
+}
+
+NetworkTopology::Node* NetworkTopology::addNode(Node &n)
+{
+    if (m_nodes.insert(n).second == false)
+        return nullptr;
+    addToLayer(NODE_LAYER_ID, n);
+    addInfoPane(n.m_info);
+    return &n;
 }
 
 void NetworkTopology::removeNode(Node &node) {
@@ -678,6 +699,11 @@ void NetworkTopology::removeNode(Node &node) {
     delete &node;
 }
 
+void NetworkTopology::addInfoPane(InfoPane &info)
+{
+    addToLayer(INFO_LAYER_ID, info);
+}
+
 bool NetworkTopology::setNodeActive(int nodeID, bool state)
 {
     Node *node = getNode(nodeID);
@@ -696,6 +722,34 @@ bool NetworkTopology::setLinkActive(int nodeID1, int nodeID2, bool state)
     if (link == nullptr)
         return false;
     link->setActive(state);
+    return true;
+}
+
+bool NetworkTopology::setNodeInfoColor(int nodeID, const sf::Color &col)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->m_info.setBackgroundColor(col);
+    return true;
+}
+
+bool NetworkTopology::setNodeInfoParameter(int nodeID,
+        const std::string &label, const std::string &content)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->m_info.setContent(label, content);
+    return true;
+}
+
+bool NetworkTopology::setNodeInfoTitle(int nodeID, const std::string &title)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->m_info.setTitle(title);
     return true;
 }
 
@@ -842,7 +896,10 @@ void NetworkTopology::render(sf::RenderWindow& window,
         const sf::Vector2f &windowSize)
 {
     //Layer &l = m_layers[1];
+    //PLOGD << "Num layers: " << getNumLayers();
+    int temp = 0;
     for (reverse_iterator it = rbegin(); it != rend(); ++it) {
+        temp++;
         if ((*it)->isRenderable()) {
             (*it)->render(window, windowSize);
             

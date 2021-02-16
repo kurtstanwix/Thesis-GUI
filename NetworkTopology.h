@@ -3,6 +3,7 @@
 #ifndef _NETWORKTOPOLOGY_H_
 #define _NETWORKTOPOLOGY_H_ 1
 
+#include <chrono>
 #include <iostream>
 #include <set>
 #include <list>
@@ -12,6 +13,7 @@
 #include "SFML/Graphics/Text.hpp"
 
 #include "BezierCurve.h"
+#include "InfoPane.h"
 #include "LayeredRenderable.h"
 
 enum nodeLayout
@@ -39,6 +41,7 @@ private:
     
     Link* getLink(Node& n1, Node& n2);
     Link* addLink(Node& n1, Node& n2);
+    Node* addNode(Node& n);
     void removeNode(Node &node);
     
     Node* getNode(int id) {
@@ -59,6 +62,9 @@ private:
         sf::RectangleShape shape;
         sf::Text m_label;
         bool activated;
+        std::chrono::system_clock::time_point m_lastClickTime;
+        
+        InfoPane m_info;
         
         void init(int id, int width);
         Node() : Node(0, 0) {};
@@ -147,8 +153,15 @@ public:
     void save(const std::string &fileName);
     void print();
     
+    void addInfoPane(InfoPane &info);
+    
     bool setNodeActive(int nodeID, bool state);
     bool setLinkActive(int nodeID1, int nodeID2, bool state);
+    
+    bool setNodeInfoColor(int nodeID, const sf::Color &col);
+    bool setNodeInfoParameter(int nodeID, const std::string &label,
+            const std::string &content);
+    bool setNodeInfoTitle(int nodeID, const std::string &title);
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,

@@ -25,6 +25,7 @@ private:
         
         sf::RectangleShape m_background;
         sf::Color m_backgroundColor;
+        sf::CircleShape m_expandIcon;
         
         int m_numLines;
         std::list<sf::Text> m_textDisplay;
@@ -52,24 +53,34 @@ private:
     };
     
     
-    std::map<std::string, InfoContent> m_content;
+    sf::Text m_title;
+    std::map<std::string, std::pair<sf::Text, InfoContent>> m_content;
     sf::Vector2f m_pos;
     
     sf::RectangleShape m_background;
+    sf::RectangleShape m_dividerLine;
     sf::Color m_backgroundColor;
+    sf::Color m_textColor;
     sf::Color m_contentColor;
+    
+    sf::RectangleShape m_closeBox;
+    sf::RectangleShape m_closeCross1;
+    sf::RectangleShape m_closeCross2;
 public:
     InfoPane();
     
     void setBackgroundColor(const sf::Color &col);
+    bool setContent(const std::string &label, const std::string &content);
     void setPosition(int x, int y);
+    void setPosition(const sf::Vector2f &pos);
+    void setTitle(const std::string &title);
     void updateContents();
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
             bool &clickedOn);
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
-    bool contains(float x, float y) { return false; };
+    bool contains(float x, float y);
 protected:
     void streamOut(std::ostream& os) const {};
 };

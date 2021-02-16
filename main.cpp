@@ -92,7 +92,7 @@ int main(int argc, char **argv)
     cout << std::string( result, (count > 0) ? count : 0 ) << endl;
     
     static plog::ConsoleAppender<plog::TxtFormatter> debugConsole;
-    plog::init(plog::debug, &debugConsole);
+    plog::init(plog::info, &debugConsole);
     
     using namespace std::chrono;
     
@@ -105,9 +105,8 @@ int main(int argc, char **argv)
     
     srand(time(0));
     
-    //NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
-    
-    InfoPane info;
+    NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
+    //InfoPane info;
     
     //window.setPosition(sf::Vector2i(50, 50));
     
@@ -133,9 +132,11 @@ int main(int argc, char **argv)
                 if (event.type == sf::Event::Closed)
                     window.close();
                 else
-                    info.update(&event, windowSize, clickedOn);
+                    //info.update(&event, windowSize, clickedOn);
+                    networkWindow.update(&event, windowSize, clickedOn);
             }
-            info.update(nullptr, windowSize, clickedOn);
+            //info.update(nullptr, windowSize, clickedOn);
+            networkWindow.update(nullptr, windowSize, clickedOn);
             /*if (ticks % 120 == 0) {
                 networkWindow.setNodeActive(nodeId, false);
                 if (++nodeId == 15)
@@ -150,7 +151,8 @@ int main(int argc, char **argv)
         }
         
         window.clear();
-        info.render(window, windowSize);
+        //info.render(window, windowSize);
+        networkWindow.render(window, windowSize);
         window.display();
     }
     

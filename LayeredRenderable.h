@@ -105,6 +105,7 @@ public:
                 return false; /* Stop moving if the outer loop is done */
             do {
                 m_parentPos--;
+                //PLOGD << "Parent size: " << m_parentPos->second.size();
                 if (m_parentPos->second.size() != 0) {
                     return true;
                 }
@@ -203,7 +204,7 @@ public:
 
     void addLayer(int id)
     {
-        m_layers.emplace(id, Layer());
+        m_layers[id];
     }
 
     virtual void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -227,9 +228,11 @@ public:
         else
             return iterator(m_layers, it, it->second.begin());
     }
-    
+    //rbegin = reverse_iterator(end())
     const iterator end()
     {
+        //reverse_iterator temp = rbegin();
+        //return (temp).base();
         return iterator(m_layers, m_layers.end(),
                 std::prev(m_layers.end())->second.end());
     }
@@ -239,6 +242,8 @@ public:
         /* Find the first non-empty layer */
         std::map<int, Layer>::reverse_iterator it;
         for (it = m_layers.rbegin(); it != m_layers.rend(); it++) {
+            int temp = it->second.size();
+            //PLOGD << "Temp: " << temp;
             if (it->second.size() != 0)
                 break;
         }
@@ -254,8 +259,9 @@ public:
     
     const reverse_iterator rend()
     {
-        return reverse_iterator(iterator(m_layers, m_layers.begin(),
-                m_layers.begin()->second.rend().base()));
+        return reverse_iterator(begin());
+        //return reverse_iterator(iterator(m_layers, m_layers.begin(),
+        //        m_layers.begin()->second.rend().base()));
         //return m_layers.begin()->rend();
     }
     
@@ -286,7 +292,7 @@ protected:
     LayeredRenderable()
     {
         /* Has an initial layer that can't be deleted */
-        m_layers.emplace(0, Layer());
+        m_layers[0];
     }
     void streamOut(std::ostream &os) const {};
 };

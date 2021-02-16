@@ -58,7 +58,6 @@ public:
     int m_fidelity;
     std::list<Segment> m_segments;
     
-    sf::Vector2f m_lastDragPos;
     //std::list<
     //std::pair<sf::RectangleShape, sf::RectangleShape> m_handleShapes;
     //std::pair<sf::RectangleShape, sf::RectangleShape> m_handleLines;

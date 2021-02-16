@@ -1,6 +1,7 @@
 #ifndef _UTILITY_H
 #define _UTILITY_H 1
 
+#include <chrono>
 #include <cmath>
 
 #include "SFML/Graphics.hpp"
@@ -14,6 +15,10 @@
 
 
 #include <iostream>
+
+
+constexpr std::chrono::milliseconds DOUBLE_CLICK_DURATION { 600 };
+
 
 /**
  * @class FontManager

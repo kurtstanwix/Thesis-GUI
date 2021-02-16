@@ -55,6 +55,12 @@ bool InterfaceButton::contains(float x, float y)
 }
 
 
+void InterfaceButton::streamOut(std::ostream& os) const
+{
+    os << m_name << " Button";
+}
+
+
 
 
 

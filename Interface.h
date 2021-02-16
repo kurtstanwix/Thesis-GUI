@@ -57,7 +57,7 @@ public:
     void render(sf::RenderWindow &window, const sf::Vector2f &windowSize);
     bool contains(float x, float y);
 protected:
-    void streamOut(std::ostream& os) const {};
+    void streamOut(std::ostream& os) const;
 };
 
 class Interface : public LayeredRenderable
