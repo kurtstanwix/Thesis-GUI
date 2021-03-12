@@ -32,7 +32,6 @@ public:
     public:
         sf::Vector2f m_pos;
         sf::RectangleShape m_shape;
-        bool m_selected;
         sf::Vector2f m_lastDragPos;
         float m_length;
         
@@ -48,11 +47,10 @@ public:
         void streamOut(std::ostream& os) const;
     };
     
-    sf::Color m_color;
+    //sf::Color m_color;
     float m_width;
     
     bool m_constructed;
-    bool m_selected;
     //std::list<Handle> m_handles;
     
     int m_fidelity;
@@ -68,11 +66,6 @@ public:
 //public:
     std::list<Handle> m_handles;
     BezierCurve(int fidelity, std::list<sf::Vector2f> controlPoints);
-    
-    void SetColor(sf::Color color)
-    {
-        m_color = color;
-    };
     
     sf::Vector2f getStart()
     {
@@ -108,6 +101,8 @@ public:
     {
         return std::next(m_handles.begin())->m_pos;
     }
+    
+    void setSelected(bool state);
 
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -116,8 +111,6 @@ public:
     bool contains(float x, float y);
 protected:
     void streamOut(std::ostream& os) const;
-    
-    void setSelected(bool state);
 };
 
 #endif

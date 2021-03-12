@@ -105,7 +105,9 @@ int main(int argc, char **argv)
     
     srand(time(0));
     
-    NetworkWindow networkWindow(20, squareWidth, sf::Vector2f(window.getSize()));
+    NetworkWindow networkWindow;
+    if (!networkWindow.init(sf::Vector2f(window.getSize()), "../MDPExample1.json", squareWidth))
+        exit(1);
     //InfoPane info;
     
     //window.setPosition(sf::Vector2i(50, 50));
@@ -114,7 +116,9 @@ int main(int argc, char **argv)
     system_clock::time_point oldTime = system_clock::now();
 
     int ticks = 0;
-    
+    networkWindow.m_nettop->setNodeInfoTitle(2, "Custom Title");
+    networkWindow.m_nettop->setNodeInfoColor(2, sf::Color::Green);
+    networkWindow.m_nettop->setNodeInfoParameter(2, "Dynamic Add", "This is a test of dynamic adding through API");
     
     int nodeId = 5;
     //networkWindow.setNodeActive(nodeId, true);

@@ -1,6 +1,7 @@
 #ifndef _RENDERABLE_H
 #define _RENDERABLE_H 1
 
+#include <chrono>
 #include "SFML/Graphics.hpp"
 
 class Renderable
@@ -66,10 +67,30 @@ public:
         return m_moving;
     }
     
+    void setColor(const sf::Color &col)
+    {
+        m_color = col;
+    }
+    
+    virtual void setSelected(bool state)
+    {
+        m_selected = state;
+    }
+    
+    bool isSelected(void)
+    {
+        return m_selected;
+    }
+    
+    
 protected:
-    bool m_moving;
+    static inline const sf::Color m_selectedColorOffset = sf::Color(100, 100, 100, 0);
+    sf::Color m_color;
     sf::Vector2f m_lastDragPos;
+    bool m_moving;
     bool m_renderable;
+    bool m_selected = false;
+    std::chrono::system_clock::time_point m_lastClickTime;
     
     virtual void streamOut(std::ostream& os) const = 0;
 };

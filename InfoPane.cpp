@@ -35,25 +35,31 @@ void InfoPane::InfoContent::setContent(const std::string &text)
     sf::Text tempText(std::string(m_content), FontManager::getInstance().getFont(),
             CHAR_SIZE);
     
+    /* Every new line is it's own text item to allow for more flexible
+     * positioning */
     int numChars = m_content.length();
     int currI = 0, currWidth = 0, startI = 0, widthOffset = 0;
     while (currI < numChars) {
         currWidth = tempText.findCharacterPos(currI).x - widthOffset;
-        if (currWidth >= CONTENT_WIDTH) {
+        if (currWidth >= CONTENT_WIDTH || m_content[currI] == '\n') {
             m_textDisplay.emplace_back();
             sf::Text &textItem = m_textDisplay.back();
             textItem.setFont(FontManager::getInstance().getFont());
             textItem.setCharacterSize(CHAR_SIZE);
             
+            std::size_t endI = currI;
             /* Want to end line at end of previous word */
-            std::size_t endI = m_content.rfind(' ', currI - 1);
+            if (currWidth >= CONTENT_WIDTH)
+                endI = m_content.rfind(' ', currI - 1);
             
-            if (endI <= startI) { /* Word does not fit on just one line */
-                textItem.setString(m_content.substr(startI, currI - startI - 1));
-                startI = currI - 1;
-            } else {
+            
+            if (endI > startI || m_content[currI] == '\n') {
+                /* Space found on line or new line */
                 textItem.setString(m_content.substr(startI, endI - startI));
                 startI = endI + 1;
+            } else { /* Word does not fit on just one line */
+                textItem.setString(m_content.substr(startI, currI - startI - 1));
+                startI = currI - 1;
             }
             
             currI = startI;
@@ -191,7 +197,7 @@ InfoPane::InfoPane()
     m_moving = false;
     m_renderable = false;
     //m_content.emplace("type", "This is a test, te AV let's keep trying AH this abcdefghijklmnopqrst it kinda works but may actually not");
-    setContent("type", "This is a test, te AV let's keep trying AH this abcdefghijklmnopqrstuvwxyz123456789 it kinda works but may actually not");
+    /*setContent("type", "This is a test, te AV let's keep trying AH this abcdefghijklmnopqrstuvwxyz123456789 it kinda works but may actually not");
     m_content["type"].second.setExpanded(true);
     
     //m_content.emplace("example", "Yet another little test for this");
@@ -201,12 +207,14 @@ InfoPane::InfoPane()
     
     setContent("one test", "");
     setContent("one test", "testing");
+    
+    setContent("listTest", "This is a list:\n\n -Hey\n -How's it going\n -Oh no, looks like we have a multiline piece here");
     setTitle("Testing Title");
     
+    setPosition(1200 / 2, 1200 / 2);*/
+    //setBackgroundColor(sf::Color::Yellow);
     m_title.setFont(FontManager::getInstance().getFont());
     m_title.setCharacterSize(TITLE_CHAR_SIZE);
-    setPosition(1200 / 2, 1200 / 2);
-    //setBackgroundColor(sf::Color::Yellow);
     setBackgroundColor(sf::Color(175, 0, 175, 255));
     
     

@@ -2,18 +2,18 @@
 ## Auto Generated makefile by CodeLite IDE
 ## any manual changes will be erased      
 ##
-## Debug
+## Library
 ProjectName            :=GraphicsTest
-ConfigurationName      :=Debug
+ConfigurationName      :=Library
 WorkspacePath          :=/home/kurt/Desktop/METR4901/Workspaces
 ProjectPath            :=/home/kurt/Desktop/METR4901/Workspaces/GraphicsTest
-IntermediateDirectory  :=./Debug
+IntermediateDirectory  :=./Library
 OutDir                 := $(IntermediateDirectory)
 CurrentFileName        :=
 CurrentFilePath        :=
 CurrentFileFullPath    :=
 User                   :=Kurt Stanwix
-Date                   :=02/16/21
+Date                   :=03/12/21
 CodeLitePath           :=/home/kurt/.codelite
 LinkerName             :=/usr/bin/g++
 SharedObjectLinkerName :=/usr/bin/g++ -shared -fPIC
@@ -27,7 +27,7 @@ OutputSwitch           :=-o
 LibraryPathSwitch      :=-L
 PreprocessorSwitch     :=-D
 SourceSwitch           :=-c 
-OutputFile             :=$(IntermediateDirectory)/$(ProjectName)
+OutputFile             :=$(IntermediateDirectory)/lib$(ProjectName).a
 Preprocessors          :=
 ObjectSwitch           :=-o 
 ArchiveOutputSwitch    := 
@@ -35,12 +35,12 @@ PreprocessOnlySwitch   :=-E
 ObjectsFileList        :="GraphicsTest.txt"
 PCHCompileFlags        :=
 MakeDirCommand         :=mkdir -p
-LinkOptions            :=  
+LinkOptions            :=  -O0
 IncludePath            :=  $(IncludeSwitch). $(IncludeSwitch). 
 IncludePCH             := 
-RcIncludePath          := $(IncludeSwitch)$(WorkspacePath) 
-Libs                   := $(LibrarySwitch)sfml-graphics $(LibrarySwitch)sfml-window $(LibrarySwitch)sfml-system 
-ArLibs                 :=  "sfml-graphics" "sfml-window" "sfml-system" 
+RcIncludePath          := 
+Libs                   := 
+ArLibs                 :=  
 LibPath                := $(LibraryPathSwitch). 
 
 ##
@@ -50,8 +50,8 @@ LibPath                := $(LibraryPathSwitch).
 AR       := /usr/bin/ar rcu
 CXX      := /usr/bin/g++
 CC       := /usr/bin/gcc
-CXXFLAGS :=  -g -O0 -Wall $(Preprocessors)
-CFLAGS   :=  -g -O0 -Wall $(Preprocessors)
+CXXFLAGS :=  -g -Wall $(Preprocessors)
+CFLAGS   :=   $(Preprocessors)
 ASFLAGS  := 
 AS       := /usr/bin/as
 
@@ -71,20 +71,22 @@ Objects=$(Objects0)
 ## Main Build Targets 
 ##
 .PHONY: all clean PreBuild PrePreBuild PostBuild MakeIntermediateDirs
-all: $(OutputFile)
+all: $(IntermediateDirectory) $(OutputFile)
 
-$(OutputFile): $(IntermediateDirectory)/.d $(Objects) 
+$(OutputFile): $(Objects)
 	@$(MakeDirCommand) $(@D)
 	@echo "" > $(IntermediateDirectory)/.d
 	@echo $(Objects0)  > $(ObjectsFileList)
-	$(LinkerName) $(OutputSwitch)$(OutputFile) @$(ObjectsFileList) $(LibPath) $(Libs) $(LinkOptions)
+	$(AR) $(ArchiveOutputSwitch)$(OutputFile) @$(ObjectsFileList) $(ArLibs)
+	@$(MakeDirCommand) "/home/kurt/Desktop/METR4901/Workspaces/.build-library"
+	@echo rebuilt > "/home/kurt/Desktop/METR4901/Workspaces/.build-library/GraphicsTest"
 
 MakeIntermediateDirs:
-	@test -d ./Debug || $(MakeDirCommand) ./Debug
+	@test -d ./Library || $(MakeDirCommand) ./Library
 
 
-$(IntermediateDirectory)/.d:
-	@test -d ./Debug || $(MakeDirCommand) ./Debug
+./Library:
+	@test -d ./Library || $(MakeDirCommand) ./Library
 
 PreBuild:
 
@@ -154,6 +156,6 @@ $(IntermediateDirectory)/Tests.cpp$(PreprocessSuffix): Tests.cpp
 ## Clean
 ##
 clean:
-	$(RM) -r ./Debug/
+	$(RM) -r ./Library/
 
 

@@ -78,9 +78,7 @@ void BezierCurve::Handle::update(sf::Event *event,
             case sf::Event::MouseButtonPressed:
                 /* Can't interact with if not visible */
                 if (isRenderable() && !clickedOn) {
-                    PLOGI << "asdasdghjahsfghjagsfjhgajfsgajsfg";
                     if (contains(event->mouseButton.x, event->mouseButton.y)) {
-                        PLOGI << "Handle contains mouse";
                         clickedOn = true;
                         /* LMB to highlight handle (drag to move),
                          * RMB to unhighlight */
@@ -96,13 +94,11 @@ void BezierCurve::Handle::update(sf::Event *event,
                 }
                 break;
             case sf::Event::MouseButtonReleased:
-                PLOGI << "Release that handle";
                 m_moving = false;
                 break;
             case sf::Event::MouseMoved:
                 /* Can't interact with if not visible */
                 if (isRenderable() && m_moving) {
-                    PLOGI << "Moving Bezier handle";
                     /* Clicked on and dragged, move with the mouse */
                     //sf::Vector2f delta = pixelToUnitVector(windowSize,
                     //        sf::Vector2f(event->mouseMove.x, event->mouseMove.y) -
@@ -143,11 +139,11 @@ bool BezierCurve::Handle::contains(float x, float y)
 BezierCurve::BezierCurve(int fidelity, std::list<sf::Vector2f> controlPoints)
     :
         m_fidelity(fidelity),
-        m_selected(false),
         m_constructed(false),
-        m_color(150,50,20),
+        //m_color(150,50,20),
         m_width(4)
 {
+    m_color = sf::Color(0, 150, 0);
     m_moving = false;
     for (std::list<sf::Vector2f>::iterator it = controlPoints.begin();
             it != controlPoints.end(); it++) {
@@ -276,15 +272,6 @@ bool BezierCurve::contains(float x, float y)
 
 void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSize)
 {
-    sf::Color fillColor;
-    if (m_selected)
-        fillColor = sf::Color(std::min(m_color.r + 100, 255), 
-                std::min(m_color.g + 100, 255),
-                std::min(m_color.b + 100, 255));
-    else
-        fillColor = m_color;
-    
-        
     int i = 0;
     for (std::list<Segment>::iterator it = m_segments.begin();
             it != m_segments.end(); it++) {
@@ -300,7 +287,7 @@ void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSiz
             
             it->m_shape.setSize({std::sqrt(std::pow(diff.x, 2) +
                     std::pow(diff.y, 2)), m_width});
-            it->m_shape.setFillColor(fillColor);
+            it->m_shape.setFillColor(m_color);
             it->render(window, windowSize);
         }
         //std::cout << "Drawing num " << i++ << std::endl;
@@ -330,13 +317,10 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
     for (std::list<Handle>::iterator it = m_handles.begin();
             it != m_handles.end(); it++) {
         it->update(event, windowSize, clickedOn);
-        if (it->isMoving()) {
-            PLOGI<<"HOW";
+        if (it->isMoving())
             selectedHandle = true;
             /* Only select one to prevent issues with dragging multiple
              * overlapping points */
-            break;
-        }
     }
     
     if (event != nullptr) {

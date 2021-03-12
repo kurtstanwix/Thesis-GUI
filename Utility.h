@@ -106,6 +106,17 @@ inline plog::Record& operator<<(plog::Record &record, const sf::Vector2f& vec)
 {
     return record << "(" << vec.x << "," << vec.y << ")";
 }
+
+template <class T>
+inline plog::Record& operator<<(plog::Record &record,
+        const std::vector<T>& vec)
+{
+    record << "(";
+    for (typename std::vector<T>::const_iterator it = vec.begin(); it != vec.end(); ++it) {
+        record << *it << ",";
+    }
+    return record << ")";
+}
     
 /*
 inline sf::Vector& operator=(const ClassName& other)

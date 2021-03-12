@@ -44,14 +44,24 @@ private:
     Node* addNode(Node& n);
     void removeNode(Node &node);
     
-    Node* getNode(int id) {
+    Node* getNode(int id)
+    {
         for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
                 it != m_nodes.end(); it++) {
             if (id == it->get().id) {
                 return &it->get();
             }
         }
-        return NULL;
+        return nullptr;
+    }
+    
+    Link* getLink(int end1ID, int end2ID)
+    {
+        Node *end1 = getNode(end1ID);
+        Node *end2 = getNode(end2ID);
+        if (end1 == nullptr || end2 == nullptr)
+            return nullptr;
+        return getLink(*end1, *end2);
     }
     
     struct Node : public Renderable {
@@ -61,8 +71,7 @@ private:
         std::list<std::reference_wrapper<Link>> links;
         sf::RectangleShape shape;
         sf::Text m_label;
-        bool activated;
-        std::chrono::system_clock::time_point m_lastClickTime;
+        //bool activated;
         
         InfoPane m_info;
         
@@ -71,7 +80,7 @@ private:
         Node(int id, int width);
         //virtual ~Node();
         
-        void setActive(bool state);
+        //void setActive(bool state);
         
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -98,14 +107,17 @@ private:
         BezierCurve shape;
         std::vector<sf::CircleShape> endArrows;
         bool m_isBidirectional;
-        bool activated;
+        //bool activated;
         
-        void setActive(bool state)
+        InfoPane m_info;
+        
+        void setSelected(bool state)
         {
-            activated = state;
+            m_selected = state;
+            shape.setSelected(state);
         }
         
-        Node& getOtherEnd(Node& n) const {
+        Node& getOtherEnd(const Node& n) const {
             if (&m_ends[0].get() == &n) {
                 return m_ends[1];
             } else if (&m_ends[1].get() == &n) {
@@ -147,21 +159,46 @@ public:
     ~NetworkTopology();
         
     //NetworkTopology(NetworkTopology&& source) = default;
-    static NetworkTopology* createTopology(int numNodes, int nodeWidth,
-            const sf::Vector2f &windowSize);
+    static NetworkTopology* createTopology(const sf::Vector2f &windowSize,
+            const std::string &fileName, int nodeWidth = 100);
     
     void save(const std::string &fileName);
     void print();
     
     void addInfoPane(InfoPane &info);
     
-    bool setNodeActive(int nodeID, bool state);
-    bool setLinkActive(int nodeID1, int nodeID2, bool state);
+    /* Returns true if Node with nodeID exists and if so, inList will contain
+     * the nodeIDs of all Nodes that can access this Node. Otherwise returns
+     * false and inList is unmodified
+     */
+    bool getNodesIn(int nodeID, std::vector<int> &inList);
     
+    /* Returns true if Node with nodeID exists and if so, outList will contain
+     * the nodeIDs of all Nodes that can be accessed from this Node. Otherwise
+     * returns false and outList is unmodified
+     */
+    bool getNodesOut(int nodeID, std::vector<int> &outList);
+    
+    bool setLinkSelected(int end1ID, int end2ID, bool state);
+    bool setNodeSelected(int nodeID, bool state);
+    
+    /* Node property setters */
+    bool setNodeColor(int nodeID, const sf::Color &col);
+    
+    /* Node InfoPane property setters */
     bool setNodeInfoColor(int nodeID, const sf::Color &col);
     bool setNodeInfoParameter(int nodeID, const std::string &label,
             const std::string &content);
     bool setNodeInfoTitle(int nodeID, const std::string &title);
+    
+    /* Link property setters */
+    bool setLinkColor(int end1ID, int end2ID, const sf::Color &col);
+    
+    /* Link InfoPane property setters */
+    bool setLinkInfoColor(int end1ID, int end2ID, const sf::Color &col);
+    bool setLinkInfoParameter(int end1ID, int end2ID, const std::string &label,
+            const std::string &content);
+    bool setLinkInfoTitle(int end1ID, int end2ID, const std::string &title);
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,

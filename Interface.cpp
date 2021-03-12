@@ -27,6 +27,7 @@ InterfaceButton::InterfaceButton(std::string name,
 void InterfaceButton::render(sf::RenderWindow &window,
         const sf::Vector2f &windowSize)
 {
+    m_shape.setFillColor(m_color);
     m_shape.setPosition(m_pos);
     m_label.setPosition(m_pos);
     window.draw(m_shape);
@@ -84,14 +85,14 @@ Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
             *this);
     
     /* 1/20th (5%) of screen width and height */
-    exit->setFillColor(sf::Color(200, 30, 30));
+    exit->setColor(sf::Color(200, 30, 30));
     exit->setOutlineColor(sf::Color::Black);
     exit->m_pos = { windowSize.x - exit->getSize().x, exit->getSize().y };
     
     std::list<InterfaceButton>::iterator save =
             m_buttons.emplace(m_buttons.end(), "Save", windowSize, &saveAction,
             *this);
-    save->setFillColor(sf::Color(30, 200, 30));
+    save->setColor(sf::Color(30, 200, 30));
     save->setOutlineColor(sf::Color::Black);
     save->m_pos = { save->getSize().x, save->getSize().y };
     

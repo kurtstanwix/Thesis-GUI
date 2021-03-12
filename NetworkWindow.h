@@ -4,6 +4,7 @@
 #include <list>
 
 #include "LayeredRenderable.h"
+#include "NetworkTopology.h"
 
 class NetworkWindow : public LayeredRenderable
 {
@@ -11,11 +12,16 @@ private:
     std::list<std::reference_wrapper<Renderable>> m_components;
     
 public:
-    NetworkWindow(int numNodes, int nodeWidth, const sf::Vector2f &windowSize);
+    NetworkTopology *m_nettop;
     
+    NetworkWindow();
+    
+    bool init(const sf::Vector2f &windowSize, const std::string &fileName,
+            int nodeWidth = 100);
+    /*
     bool setNodeActive(int nodeID, bool state);
     bool setLinkActive(int nodeID1, int nodeID2, bool state);
-    
+    */
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
             bool &clickedOn);

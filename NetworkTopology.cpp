@@ -31,7 +31,6 @@ NetworkTopology::Node NetworkTopology::Node::null_node(INVALID_ID, 0);
 NetworkTopology::Link::Link(Node &end1, Node &end2) :
         m_ends({end1, end2}),
         m_isBidirectional(false),
-        activated(false),
         endArrows(m_ends.size()),
         shape(40, {end1.shape.getPosition(),
                 sf::Vector2f((end1.m_pos.x + end2.m_pos.x) / 2.0f + 
@@ -40,9 +39,9 @@ NetworkTopology::Link::Link(Node &end1, Node &end2) :
                         (end1.m_pos.y + end2.m_pos.y) / 2.0f -
                         std::cos(std::atan2(end1.m_pos.y - end2.m_pos.y,
                                 end1.m_pos.x - end2.m_pos.x)) / 6.0f),
-                
                 end2.shape.getPosition()})
 {
+    m_color = sf::Color(125, 0, 0);
     std::cout << "Making link bezier " << end1.m_pos << " - " <<
             (end1.m_pos + end2.m_pos) / 2.0f << " - " <<
             end2.m_pos << std::endl;
@@ -57,17 +56,27 @@ NetworkTopology::Link::Link(Node &end1, Node &end2) :
 
 void NetworkTopology::Link::update(sf::Event *event,
         const sf::Vector2f &windowSize, bool &clickedOn) {
+    bool clickedOnBefore = clickedOn;
     shape.update(event, windowSize, clickedOn);
+    setSelected(shape.isSelected());
+    if (!clickedOnBefore && clickedOn) { /* Shape was clicked on */
+        /* Check if double click, if so, show info pane */
+        if (duration_cast<milliseconds>(system_clock::now() -
+                m_lastClickTime).count() < DOUBLE_CLICK_DURATION.count()) {
+            m_info.setPosition(unitToPixel(windowSize,
+                    shape.GetPointOnCurve(0.5)));
+            m_info.setRenderable(true);
+        }
+        m_lastClickTime = system_clock::now();
+    }
 }
 
 void NetworkTopology::Link::render(sf::RenderWindow &window,
         const sf::Vector2f &windowSize) {
-    sf::Color fillColor;
-    if (activated) {
-        fillColor = sf::Color::Yellow;
-    } else {
-        fillColor = sf::Color(125, 0, 0);
-    }
+    sf::Color fillColor = m_color;
+    if (m_selected)
+        fillColor += m_selectedColorOffset;
+    
     //shape.SetColor(fillColor);
     
     std::vector<sf::Vector2f> endsPos;
@@ -114,10 +123,10 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
         //if (m_isBidirectional || i == 1) {
         // This is for unidirection only links
         if (i == 1) {
-            if (m_isBidirectional) {
+            /*if (m_isBidirectional) {
                 PLOGI << "Bidirectional link";
                 fillColor = sf::Color::Magenta;
-            }
+            }*/
             
             
             endArrows[i].setRadius(r);
@@ -132,7 +141,7 @@ void NetworkTopology::Link::render(sf::RenderWindow &window,
         endsPos.push_back(endPos);
     }
     
-    shape.SetColor(fillColor);
+    shape.setColor(fillColor);
     /* It has changed endpoints since last checked */
     if (!floatEquals(unitToPixel(windowSize, shape.getStart()), endsPos[0]) ||
             !floatEquals(unitToPixel(windowSize, shape.getEnd()), endsPos[1])) {
@@ -238,10 +247,10 @@ NetworkTopology::Node::Node(int id, int width) {
 
 void NetworkTopology::Node::init(int id, int width) {
     this->id = id;
-    activated = false;
     shape.setSize(sf::Vector2f(width, width));
     shape.setOrigin(width / 2, width / 2);
-    shape.setFillColor(sf::Color(0, 0, 200));
+    //shape.setFillColor(sf::Color(0, 0, 200));
+    m_color = sf::Color(0, 0, 200);
     shape.setOutlineColor(sf::Color::Black);
     m_label.setFont(FontManager::getInstance().getFont());
     setText(m_label, "Node " + std::to_string(id));
@@ -268,29 +277,31 @@ void NetworkTopology::Node::update(sf::Event *event,
                         if (event->mouseButton.button == sf::Mouse::Left) {
                             PLOGD << "Right click on Node " << *this;
                             PLOGD << "Already activated: " <<
-                                    (activated ? "YES" : "NO");
-                            setActive(true);
+                                    (m_selected ? "YES" : "NO");
+                            setSelected(true);
                             m_moving = true;
+                            m_lastDragPos.x = event->mouseButton.x;
+                            m_lastDragPos.y = event->mouseButton.y;
                             if (duration_cast<milliseconds>(
                                     system_clock::now() -
                                     m_lastClickTime).count() <
                                     DOUBLE_CLICK_DURATION.count()) {
+                                m_info.setPosition(unitToPixel(windowSize, m_pos));
                                 m_info.setRenderable(true);
                             }
                             m_lastClickTime = system_clock::now();
-                            system_clock::time_point m_lastClickTime;
                         } else if (event->mouseButton.button == sf::Mouse::Right) {
                             PLOGD << "Right click on Node " << *this;
                             PLOGD << "Already activated: " <<
-                                    (activated ? "YES" : "NO");
-                            setActive(false);
+                                    (m_selected ? "YES" : "NO");
+                            setSelected(false);
                         }
                     }
                 }
                 if (toDeselect && 
                         !(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
                         sf::Keyboard::isKeyPressed(sf::Keyboard::RControl))) {
-                    setActive(false);
+                    setSelected(false);
                 }
                 break;
             }
@@ -299,10 +310,12 @@ void NetworkTopology::Node::update(sf::Event *event,
                 break;
             case sf::Event::MouseMoved:
                 if (m_moving) {
-                    PLOGD << "Mouse moved x: " << event->mouseMove.x <<
-                            ", y: " << event->mouseMove.y;
-                    m_pos = pixelToUnit(windowSize,
-                            {event->mouseMove.x, event->mouseMove.y});
+                    sf::Vector2f delta(pixelToUnit(windowSize,
+                            sf::Vector2f(event->mouseMove.x, event->mouseMove.y)) -
+                            pixelToUnit(windowSize, m_lastDragPos));
+                    m_pos += delta;
+                    m_lastDragPos.x = event->mouseMove.x;
+                    m_lastDragPos.y = event->mouseMove.y;
                 }
         }
     }
@@ -313,10 +326,16 @@ void NetworkTopology::Node::render(sf::RenderWindow &window,
     if (id == INVALID_ID) {
         return;
     }
-    if (activated)
+    sf::Color fillColor = m_color;
+    if (m_selected)
+        fillColor += m_selectedColorOffset;
+    
+    shape.setFillColor(fillColor);
+    /*if (activated)
         shape.setFillColor(sf::Color(0, 200, 200));
     else
         shape.setFillColor(sf::Color(0, 0, 200));
+    */
     
     shape.setPosition(unitToPixel(windowSize, m_pos));
     m_label.setPosition(unitToPixel(windowSize, m_pos));
@@ -329,15 +348,18 @@ bool NetworkTopology::Node::contains(float x, float y)
     return shape.getGlobalBounds().contains(x, y);
 }
 
-void NetworkTopology::Node::setActive(bool state)
+/*
+void NetworkTopology::Node::setSelected(bool state)
 {
-    activated = state;
+    m_selected = state;
     
     for (std::list<std::reference_wrapper<Link>>::iterator it = links.begin();
             it != links.end(); it++) {
         it->get().activated = state;
     }
+    
 }
+*/
 
 //NetworkTopology::NetworkTopology()
 
@@ -348,7 +370,7 @@ NetworkTopology::NetworkTopology(int numNodes, int nodeWidth,
         m_numNodes(numNodes),
         m_nodes(),
         m_nodeWidth(nodeWidth),
-        m_selectedNode(NULL)
+        m_selectedNode(nullptr)
 {
     /* Need to add all nodes dynamically as they are around for lifetime of this */
     for (int i = 0; i < numNodes; i++) {
@@ -421,7 +443,7 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
         m_layout(layout),
         m_nodes(),
         m_nodeWidth(nodeWidth),
-        m_selectedNode(NULL)
+        m_selectedNode(nullptr)
 {
     /* Set up the render/update layers */
     addLayer(NODE_LAYER_ID);
@@ -435,16 +457,19 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
     }
     
     
-    /* Initial layout for nodes will be an evenly spaced circle */
+    /* Calculate constants for each node layout */
+    /* Seperation angle for an evenly spaced circle */
     float divisionAngle = 2 * M_PI / m_numNodes;
-    
+    /* Largest square creatable with the number of nodes */
     int largestSquare = int(std::sqrt(m_numNodes));
-    PLOGI << "square " << largestSquare;
+    PLOGI << "Largest square " << largestSquare;
+    /* How many nodes remain after making this square */
     int dist = m_numNodes - largestSquare * largestSquare;
     int i = 0;
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
         Node *node = getNode(it->first);
+        PLOGI << "i " << i;
         switch (m_layout) {
             case Circle:
                 /* Position in an evenly spaced circle */
@@ -458,11 +483,9 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                 if (dist == 0) { /* Num nodes makes a perfect square */
                     pos.x = i % largestSquare;
                     pos.y = i / largestSquare;
-                    std::stringstream ss;
-                    ss << pos;
-                    PLOGI << ss.str();
+                    PLOGI << pos;
                     pos = pos / (0.5f * (largestSquare - 1)) - 1.0f;
-                } else if (dist > largestSquare + 1) {
+                } else if (dist > largestSquare) {
                     /* Num nodes fill up all rows but the bottom */
                     pos.x = i % (largestSquare + 1);
                     pos.y = i / (largestSquare + 1);
@@ -481,15 +504,7 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                 node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
                             pos);
         }
-        
         node->m_info.setPosition(unitToPixel(windowSize, node->m_pos));
-        
-        if (i == 0) {
-            std::cout << "width: " << nodeWidth << std::endl;
-            std::cout << "windowSize.x: " << windowSize.x << ", windowSize.y: " << windowSize.y << std::endl;
-            std::cout << "cos: " << std::cos(divisionAngle * i) << ", sin: " << -std::sin(divisionAngle * i) << std::endl;
-            std::cout << "pos: " << node->m_pos << std::endl;
-        }
         i++;
     }
     
@@ -514,6 +529,9 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                 //linkIndices.insert(linkIndex);
                 //std::cout << ", " << linkIndex;
                 Link &link = *addLink(*node, *linkedNode);
+                
+                link.m_info.setPosition(unitToPixel(windowSize,
+                        link.shape.GetPointOnCurve(0.5)));
                 ss << ", " << *iit;
             }
         }
@@ -536,10 +554,10 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
 #include <algorithm>
 #include <unistd.h>
 
-NetworkTopology* NetworkTopology::createTopology(int numNodes,
-        int nodeWidth, const sf::Vector2f &windowSize)
+NetworkTopology* NetworkTopology::createTopology(const sf::Vector2f &windowSize,
+        const std::string &fileName, int nodeWidth)
 {
-    std::ifstream i("../gridNetwork.json");
+    std::ifstream i(fileName);
     json j;
     i >> j;
     
@@ -549,13 +567,24 @@ NetworkTopology* NetworkTopology::createTopology(int numNodes,
     json nodes = j["nodes"];
     std::map<int, std::set<int>> nodeLinks;
     for (json::const_iterator it = nodes.begin(); it != nodes.end(); it++) {
-        if (nodeLinks.insert(std::pair<int, std::set<int>>(
-                (*it)["id"],
-                (*it)["links"])).second == false) {
-            // This was a duplicate node, bad file
-            return NULL;
+        json links = (*it)["links"];
+        std::set<int> linkIDs;
+        for (json::const_iterator itt = links.begin(); itt != links.end();
+                itt++) {
+            if (!linkIDs.insert((int)(*itt)["otherNodeID"]).second) {
+                PLOGE << "In topology file \"" << fileName << "\" Node " <<
+                        (*it)["id"] << " has duplicate link to Node " <<
+                        (*itt)["otherNodeID"] << ", aborting creation";
+                return nullptr;
+            }
         }
-        //(*it)["id"] << std::endl;
+        if (!nodeLinks.insert(std::pair<int, std::set<int>>(
+                (*it)["id"], linkIDs)).second) {
+            /* This was a duplicate node, bad file */
+            PLOGE << "Topology file \"" << fileName << "\" contains duplicate "
+                    "Node " << (*it)["id"] << ", aborting creation";
+            return nullptr;
+        }
     }
     
     
@@ -568,7 +597,6 @@ NetworkTopology* NetworkTopology::createTopology(int numNodes,
             ss << *iit << ", ";
         }
         PLOGD << ss.str() << "]";
-        //(*it)["id"] << std::endl;
     }
     
     PLOGD << "SIZE: " << nodeLinks.size();
@@ -619,27 +647,28 @@ NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
             return &l;
         }
     }
-    return NULL;
+    return nullptr;
 }
 */
 // This is for unidirectional links where n1-n2 != n2-n1 (but both can exist)
 NetworkTopology::Link* NetworkTopology::getLink(Node& n1, Node& n2) {
-    std::cout << std::endl << "Checking " << n1 << ", " << n2 << " exists ";
+    PLOGD << "Checking Link " << n1 << ", " << n2 << " exists";
     for (std::list<std::reference_wrapper<Link>>::iterator it = m_links.begin();
             it != m_links.end(); it++) {
         Link& l = it->get();
         if (&l.m_ends[0].get() == &n1 && &l.m_ends[1].get() == &n2)
             return &l;
     }
-    return NULL;
+    return nullptr;
 }
 
 NetworkTopology::Link* NetworkTopology::addLink(Node &n1, Node &n2) {
     Link *existingLink = getLink(n1, n2);
-    if (existingLink == NULL) {
+    if (existingLink == nullptr) {
         Link &l = *(new Link(n1, n2));
         m_links.push_back(l);
         addToLayer(LINK_LAYER_ID, l);
+        addInfoPane(l.m_info);
         PLOGD << "Added Link: " << l;
         return &l;
     } else {
@@ -704,24 +733,103 @@ void NetworkTopology::addInfoPane(InfoPane &info)
     addToLayer(INFO_LAYER_ID, info);
 }
 
-bool NetworkTopology::setNodeActive(int nodeID, bool state)
+bool NetworkTopology::getNodesIn(int nodeID, std::vector<int> &inList)
 {
     Node *node = getNode(nodeID);
     if (node == nullptr)
         return false;
-    node->setActive(state);
+    inList.clear();
+    for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
+            it != m_nodes.end(); ++it) {
+        Node &otherNode = it->get();
+        if (otherNode.id == node->id) /* Nodes can't link to themselves */
+            continue;
+        for (std::list<std::reference_wrapper<Link>>::iterator itt = otherNode.links.begin();
+            itt != otherNode.links.end(); ++itt) {
+            if (itt->get().getOtherEnd(otherNode).id == node->id)
+                inList.push_back(otherNode.id);
+        }
+    }
+    return true;
 }
 
-bool NetworkTopology::setLinkActive(int nodeID1, int nodeID2, bool state)
+bool NetworkTopology::getNodesOut(int nodeID, std::vector<int> &outList)
 {
-    Node *node1 = getNode(nodeID1);
-    Node *node2 = getNode(nodeID2);
-    if (node1 == nullptr || node2 == nullptr)
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
         return false;
-    Link *link = getLink(*node1, *node2);
+    outList.clear();
+    for (std::list<std::reference_wrapper<Link>>::iterator it = node->links.begin();
+            it != node->links.end(); ++it) {
+        outList.push_back(it->get().getOtherEnd(*node).id);
+    }
+    return true;
+}
+
+bool NetworkTopology::setLinkSelected(int end1ID, int end2ID, bool state)
+{
+    Link *link = getLink(end1ID, end2ID);
     if (link == nullptr)
         return false;
-    link->setActive(state);
+    link->setSelected(state);
+    return true;
+}
+
+bool NetworkTopology::setNodeSelected(int nodeID, bool state)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->setSelected(state);
+    return true;
+}
+
+bool NetworkTopology::setLinkColor(int end1ID, int end2ID, const sf::Color &col)
+{
+    Link *link = getLink(end1ID, end2ID);
+    if (link == nullptr)
+        return false;
+    link->setColor(col);
+    return true;
+}
+
+
+bool NetworkTopology::setLinkInfoColor(int end1ID, int end2ID,
+        const sf::Color &col)
+{
+    Link *link = getLink(end1ID, end2ID);
+    if (link == nullptr)
+        return false;
+    link->m_info.setBackgroundColor(col);
+    return true;
+}
+
+bool NetworkTopology::setLinkInfoParameter(int end1ID, int end2ID,
+        const std::string &label, const std::string &content)
+{
+    Link *link = getLink(end1ID, end2ID);
+    if (link == nullptr)
+        return false;
+    link->m_info.setContent(label, content);
+    return true;
+}
+
+bool NetworkTopology::setLinkInfoTitle(int end1ID, int end2ID,
+        const std::string &title)
+{
+    Link *link = getLink(end1ID, end2ID);
+    if (link == nullptr)
+        return false;
+    link->m_info.setTitle(title);
+    return true;
+}
+
+bool NetworkTopology::setNodeColor(int nodeID, const sf::Color &col)
+{
+    Node *node = getNode(nodeID);
+    if (node == nullptr)
+        return false;
+    node->setColor(col);
     return true;
 }
 
@@ -828,7 +936,7 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
                 std::cout << "Mouse Press: x " << event->mouseButton.x << ", y " <<
                         event->mouseButton.y << std::endl;
                 /* Check if a node was selected *
-                Node *nodeClicked = NULL;
+                Node *nodeClicked = nullptr;
                 for (std::set<std::reference_wrapper<Node>>::iterator it = m_nodes.begin();
                         it != m_nodes.end(); it++) {
                     if (it->get().shape.getGlobalBounds().contains(event->mouseButton.x,
@@ -837,7 +945,7 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
                         break;
                     }
                 }
-                if (nodeClicked != NULL) {
+                if (nodeClicked != nullptr) {
                     /* Node was selected *
                     m_selectedNode = nodeClicked;
                     if (event->mouseButton.button == sf::Mouse::Left) {
@@ -858,10 +966,10 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
                 break;
             }
             case sf::Event::MouseButtonReleased:
-                m_selectedNode = NULL;
+                m_selectedNode = nullptr;
                 break;
             case sf::Event::MouseMoved:
-                if (m_selectedNode != NULL) {
+                if (m_selectedNode != nullptr) {
                     std::cout << "Mouse moved x: " << event->mouseMove.x << ", y: " << event->mouseMove.y << std::endl;
                     
                     m_selectedNode->m_pos = pixelToUnit(windowSize,
@@ -870,9 +978,9 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
                 break;
             case sf::Event::KeyPressed:
                 if (event->key.code == sf::Keyboard::Delete) {
-                    if (m_selectedNode != NULL) {
+                    if (m_selectedNode != nullptr) {
                         removeNode(*m_selectedNode);
-                        m_selectedNode = NULL;
+                        m_selectedNode = nullptr;
                     }
                 }
                 

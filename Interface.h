@@ -31,11 +31,6 @@ public:
             void (*onClickCallback)(InterfaceButton &caller),
             Interface &parent);
     
-    void setFillColor(const sf::Color &color)
-    {
-        m_shape.setFillColor(color);
-    };
-    
     void setOutlineColor(const sf::Color &color)
     {
         m_shape.setOutlineColor(color);
