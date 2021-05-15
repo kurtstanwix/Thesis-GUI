@@ -4,12 +4,13 @@
 #include <chrono>
 #include <cmath>
 
-#include "SFML/Graphics.hpp"
+#include <nlohmann/json.hpp>
 #include <plog/Log.h>
+#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/Font.hpp>
 
 #include "Config.h"
 
-#include <SFML/Graphics/Font.hpp>
 
 
 
@@ -103,20 +104,26 @@ inline plog::Record& operator<<(plog::Record &record, const sf::Color &col)
             unsigned(col.b) << "," << unsigned(col.a) << ")";
 }
 
-inline plog::Record& operator<<(plog::Record &record, const sf::Vector2f& vec)
+inline plog::Record& operator<<(plog::Record &record, const sf::Vector2f &vec)
 {
     return record << "(" << vec.x << "," << vec.y << ")";
 }
 
 template <class T>
 inline plog::Record& operator<<(plog::Record &record,
-        const std::vector<T>& vec)
+        const std::vector<T> &vec)
 {
     record << "(";
     for (typename std::vector<T>::const_iterator it = vec.begin(); it != vec.end(); ++it) {
         record << *it << ",";
     }
     return record << ")";
+}
+
+template <class T1, class T2>
+inline plog::Record& operator<<(plog::Record &record, const std::pair<T1, T2> &pair)
+{
+    return record << "(" << pair.first << "," << pair.second << ")";
 }
     
 /*

@@ -348,85 +348,6 @@ bool NetworkTopology::Node::contains(float x, float y)
     return shape.getGlobalBounds().contains(x, y);
 }
 
-/*
-void NetworkTopology::Node::setSelected(bool state)
-{
-    m_selected = state;
-    
-    for (std::list<std::reference_wrapper<Link>>::iterator it = links.begin();
-            it != links.end(); it++) {
-        it->get().activated = state;
-    }
-    
-}
-*/
-
-//NetworkTopology::NetworkTopology()
-
-//Default constructor
-NetworkTopology::NetworkTopology(int numNodes, int nodeWidth,
-        const sf::Vector2f &windowSize, nodeLayout layout)
-    :
-        m_numNodes(numNodes),
-        m_nodes(),
-        m_nodeWidth(nodeWidth),
-        m_selectedNode(nullptr)
-{
-    /* Need to add all nodes dynamically as they are around for lifetime of this */
-    for (int i = 0; i < numNodes; i++) {
-        m_nodes.insert(*(new Node(i + 20, nodeWidth)));
-    }
-    
-    /* Initial layout for nodes will be an evenly spaced circle */
-    float divisionAngle = 2 * M_PI / numNodes;
-    for (int i = 20; i < numNodes + 20; i++) {
-        Node *node = getNode(i);
-        if (node == &Node::null_node) {
-            std::cout << "Node " << i << " not found" << std::endl;
-            continue;
-        }
-        std::cout << "NodeNum: " << *node;//get(i);
-        /* */
-        int numLinks = rand() % numNodes / 3;
-        //std::set<int> linkIndices;
-        for (int j = 0; j < numLinks; j++) {
-            int linkId = rand() % m_numNodes + 20;
-            Node *linkedNode = getNode(linkId);
-            if (linkedNode != &Node::null_node &&
-                    node != linkedNode) { // Can't link to itself or an invalid node
-                //linkIndices.insert(linkIndex);
-                //std::cout << ", " << linkIndex;
-                addLink(*node, *linkedNode);
-                std::cout << ", " << linkId;
-            }
-        }
-        std::cout << std::endl;
-        
-        std::cout << "Div: " << divisionAngle * i << std::endl;
-        node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
-                {std::cos(divisionAngle * i), -std::sin(divisionAngle * i)});
-        
-        if (i == 0) {
-            std::cout << "width: " << nodeWidth << std::endl;
-            std::cout << "windowSize.x: " << windowSize.x << ", windowSize.y: " << windowSize.y << std::endl;
-            std::cout << "cos: " << std::cos(divisionAngle * i) << ", sin: " << -std::sin(divisionAngle * i) << std::endl;
-            std::cout << "pos: " << node->m_pos << std::endl;
-        }
-        
-        
-    }
-    
-    m_renderable = true;
-    
-    
-    std::cout << std::endl;
-    
-    
-    //std::unique_ptr<int[]> array(new int[size]);
-    
-    
-}
-
 NetworkTopology::~NetworkTopology()
 {
     
@@ -449,7 +370,6 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
     addLayer(NODE_LAYER_ID);
     addLayer(LINK_LAYER_ID);
     addLayer(INFO_LAYER_ID);
-    std::cout <<"GOOOOOD INIT" << std::endl;
     /* Need to add all nodes dynamically as they are around for lifetime of this */
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
@@ -462,18 +382,15 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
     float divisionAngle = 2 * M_PI / m_numNodes;
     /* Largest square creatable with the number of nodes */
     int largestSquare = int(std::sqrt(m_numNodes));
-    PLOGI << "Largest square " << largestSquare;
     /* How many nodes remain after making this square */
     int dist = m_numNodes - largestSquare * largestSquare;
     int i = 0;
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
         Node *node = getNode(it->first);
-        PLOGI << "i " << i;
         switch (m_layout) {
             case Circle:
                 /* Position in an evenly spaced circle */
-                std::cout << "Div: " << divisionAngle * i << std::endl;
                 node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
                         {std::cos(divisionAngle * i), -std::sin(divisionAngle * i)});
                 break;
@@ -501,53 +418,45 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
                     pos.x = pos.x / (0.5f * largestSquare) - 1.0f;
                     pos.y = pos.y / (0.5f * (largestSquare - 1)) - 1.0f;
                 }
-                node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth},
-                            pos);
+                node->m_pos = capInitial(windowSize, {nodeWidth, nodeWidth}, pos);
         }
         node->m_info.setPosition(unitToPixel(windowSize, node->m_pos));
         i++;
     }
     
     /* Add all the links between nodes */
+    PLOGV << "Node Links:";
     for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
             it != nodeLinks.end(); it++) {
         Node *node = getNode(it->first);
         if (node == &Node::null_node) {
             /* How could this even happen? */
-            PLOGW << "Node " << it->first << " not found";
+            PLOGW << " Node " << it->first << " not found";
             continue;
         }
         //addToLayer(NODE_LAYER_ID, *node);
         std::stringstream ss;
-        ss << "NodeNum: " << *node;
-        //std::set<int> linkIndices;
+        ss << " Node " << *node << ":";
+        std::string sep = "";
         for (std::set<int>::iterator iit = it->second.begin();
                 iit != it->second.end(); iit++) {
             Node *linkedNode = getNode(*iit);
             if (linkedNode != &Node::null_node &&
                     node != linkedNode) { // Can't link to itself or an invalid node
-                //linkIndices.insert(linkIndex);
-                //std::cout << ", " << linkIndex;
                 Link &link = *addLink(*node, *linkedNode);
                 
                 link.m_info.setPosition(unitToPixel(windowSize,
                         link.shape.GetPointOnCurve(0.5)));
-                ss << ", " << *iit;
+                ss << sep << *iit;
+                sep = ", ";
             }
         }
-        PLOGD << ss.str();
+        PLOGV << ss.str();
     }
-    
     
     m_renderable = true;
     
     PLOGD << "Number of renderables in topology: " << size();
-    
-    std::cout << std::endl;
-    
-    
-    //std::unique_ptr<int[]> array(new int[size]);
-    
 }
 
 //#include <stdio.h>
@@ -557,58 +466,73 @@ NetworkTopology::NetworkTopology(std::map<int, std::set<int>> nodeLinks,
 NetworkTopology* NetworkTopology::createTopology(const sf::Vector2f &windowSize,
         const std::string &fileName, int nodeWidth)
 {
-    std::ifstream i(fileName);
-    json j;
-    i >> j;
-    
-    nodeLayout layout = j["layout"];
-    PLOGI << "Layout " << layout;
-    
-    json nodes = j["nodes"];
-    std::map<int, std::set<int>> nodeLinks;
-    for (json::const_iterator it = nodes.begin(); it != nodes.end(); it++) {
-        json links = (*it)["links"];
-        std::set<int> linkIDs;
-        for (json::const_iterator itt = links.begin(); itt != links.end();
-                itt++) {
-            if (!linkIDs.insert((int)(*itt)["otherNodeID"]).second) {
-                PLOGE << "In topology file \"" << fileName << "\" Node " <<
-                        (*it)["id"] << " has duplicate link to Node " <<
-                        (*itt)["otherNodeID"] << ", aborting creation";
+    NetworkTopology *result;
+    try {
+        std::ifstream i(fileName);
+        json j;
+        i >> j;
+        
+        nodeLayout layout = Grid;
+        if (j.contains("layout")) {
+            layout = j["layout"];
+        }
+        PLOGD << "Topology Layout " << layout;
+        
+        if (!j.contains("nodes")) {
+            PLOGE << "Contains no nodes";
+            return nullptr;
+        }
+        json nodes = j["nodes"];
+        std::map<int, std::set<int>> nodeLinks;
+        for (json::const_iterator it = nodes.begin(); it != nodes.end(); it++) {
+            if (!it->contains("id")) {
+                PLOGE << "Node does not contain required field \"id\"";
+                return nullptr;
+            }
+            std::set<int> linkIDs;
+            if (it->contains("links")) {
+                json links = (*it)["links"];
+                for (json::const_iterator itt = links.begin(); itt != links.end();
+                        itt++) {
+                    if (!itt->contains("otherNodeID")) {
+                        PLOGE << "Link on Node " << (int)(*it)["id"] << " does not contain required field \"otherNodeID\"";
+                        return nullptr;
+                    }
+                    if (!linkIDs.insert((int)(*itt)["otherNodeID"]).second) {
+                        PLOGE << "Node " << (int)(*it)["id"] << " has duplicate link to Node " <<
+                                (int)(*itt)["otherNodeID"];
+                        return nullptr;
+                    }
+                }
+            }
+            if (!nodeLinks.insert(std::pair<int, std::set<int>>(
+                    (*it)["id"], linkIDs)).second) {
+                /* This was a duplicate node, bad file */
+                PLOGE << "Contains duplicate Node " << (int)(*it)["id"];
                 return nullptr;
             }
         }
-        if (!nodeLinks.insert(std::pair<int, std::set<int>>(
-                (*it)["id"], linkIDs)).second) {
-            /* This was a duplicate node, bad file */
-            PLOGE << "Topology file \"" << fileName << "\" contains duplicate "
-                    "Node " << (*it)["id"] << ", aborting creation";
-            return nullptr;
+        
+        // Print out the connections
+        for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
+                it != nodeLinks.end(); it++) {
+            std::stringstream ss;
+            ss << "id: " << it->first << ", links: [";
+            for (std::set<int>::iterator iit = it->second.begin();
+                    iit != it->second.end(); iit++) {
+                ss << *iit << ", ";
+            }
+            PLOGD << ss.str() << "]";
         }
+        PLOGD << "SIZE: " << nodeLinks.size();
+        
+        result = new NetworkTopology(nodeLinks, nodeWidth,
+                windowSize, layout);
+    } catch (const std::exception &e) {
+        PLOGF << e.what();
+        return nullptr;
     }
-    
-    
-    for (std::map<int, std::set<int>>::iterator it = nodeLinks.begin();
-            it != nodeLinks.end(); it++) {
-        std::stringstream ss;
-        ss << "id: " << it->first << ", links: [";
-        for (std::set<int>::iterator iit = it->second.begin();
-                iit != it->second.end(); iit++) {
-            ss << *iit << ", ";
-        }
-        PLOGD << ss.str() << "]";
-    }
-    
-    PLOGD << "SIZE: " << nodeLinks.size();
-    
-    NetworkTopology *test = new NetworkTopology(nodeLinks, nodeWidth,
-            windowSize, layout);
-    //NetworkTopology *test = new NetworkTopology(numNodes, nodeWidth, windowSize);
-    for (std::list<std::reference_wrapper<Link>>::iterator it = test->m_links.begin();
-            it != test->m_links.end(); it++) {
-        PLOGD << "Link: " << it->get();
-    }
-    return test;
+    return result;
 }
 
 void NetworkTopology::save(const std::string &fileName) {

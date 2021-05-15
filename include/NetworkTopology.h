@@ -153,8 +153,6 @@ private:
     NetworkTopology(std::map<int, std::set<int>> nodeLinks,
             int nodeWidth, const sf::Vector2f &windowSize,
             nodeLayout layout = Circle);
-    NetworkTopology(int numNodes, int nodeWidth,
-            const sf::Vector2f &windowSize, nodeLayout layout = Circle);
 public:
     ~NetworkTopology();
         
