@@ -71,6 +71,11 @@ public:
     {
         m_color = col;
     }
+
+    const sf::Color getColor()
+    {
+        return m_color;
+    }
     
     virtual void setSelected(bool state)
     {

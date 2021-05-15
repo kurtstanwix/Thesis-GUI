@@ -80,30 +80,35 @@ Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
         m_bezier(4, {{0, 0}, {0.25, 0}, {0.5, 0}, {0.5, 0.25}, {0.5, 0.5}})
 {
     PLOGD << "Creating interface";
-    std::list<InterfaceButton>::iterator exit =
-            m_buttons.emplace(m_buttons.end(), "Exit", windowSize, &exitAction,
+
+    addLayer(BUTTON_LAYER);
+    addLayer(SHAPE_LAYER);
+
+    registerButton("Exit", windowSize, &exitAction, sf::Color(200, 30, 30),
+            {windowSize.x - windowSize.x / 20.0f, windowSize.y / 20.0f});
+    
+
+    registerButton("Save", windowSize, &saveAction, sf::Color(30, 200, 30), windowSize / 20.0f);
+    
+    //addToLayer(SHAPE_LAYER, m_bezier);
+    
+    m_renderable = true;
+}
+
+void Interface::registerButton(const std::string &name, const sf::Vector2f &windowSize,
+        void (*onClickCallback)(InterfaceButton &caller),
+        const sf::Color &col, const sf::Vector2f &pos)
+{
+    std::list<InterfaceButton>::iterator button =
+            m_buttons.emplace(m_buttons.end(), name, windowSize, onClickCallback,
             *this);
     
     /* 1/20th (5%) of screen width and height */
-    exit->setColor(sf::Color(200, 30, 30));
-    exit->setOutlineColor(sf::Color::Black);
-    exit->m_pos = { windowSize.x - exit->getSize().x, exit->getSize().y };
-    
-    std::list<InterfaceButton>::iterator save =
-            m_buttons.emplace(m_buttons.end(), "Save", windowSize, &saveAction,
-            *this);
-    save->setColor(sf::Color(30, 200, 30));
-    save->setOutlineColor(sf::Color::Black);
-    save->m_pos = { save->getSize().x, save->getSize().y };
-    
-    addLayer(BUTTON_LAYER);
-    addLayer(SHAPE_LAYER);
-    
-    addToLayer(BUTTON_LAYER, *exit);
-    addToLayer(BUTTON_LAYER, *save);
-    addToLayer(SHAPE_LAYER, m_bezier);
-    
-    m_renderable = true;
+    button->setColor(col);
+    button->setOutlineColor(sf::Color::Black);
+    button->m_pos = pos;
+
+    addToLayer(BUTTON_LAYER, *button);
 }
 
 void Interface::update(sf::Event *event, const sf::Vector2f &windowSize,

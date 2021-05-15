@@ -33,9 +33,9 @@ bool NetworkWindow::init(const sf::Vector2f &windowSize,
     }
     
     /* Add the topology window and the ui to the components queue */
-    Interface *interface = new Interface(windowSize, *m_nettop);
+    m_interface = new Interface(windowSize, *m_nettop);
     
-    addToLayer(UI_LAYER_ID, *interface);
+    addToLayer(UI_LAYER_ID, *m_interface);
     addToLayer(NETWORK_LAYER_ID, *m_nettop);
     
     return true;

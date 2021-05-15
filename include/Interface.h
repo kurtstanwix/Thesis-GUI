@@ -66,6 +66,10 @@ public:
     NetworkTopology &m_nettop;
     
     Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop);
+
+    void registerButton(const std::string &name, const sf::Vector2f &windowSize,
+        void (*onClickCallback)(InterfaceButton &caller),
+        const sf::Color &col, const sf::Vector2f &pos);
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,

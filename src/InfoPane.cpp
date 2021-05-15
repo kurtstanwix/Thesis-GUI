@@ -32,6 +32,7 @@ void InfoPane::InfoContent::setContent(const std::string &text)
     m_content.assign(text);
     m_textDisplay.clear(); /* Remove all current lines */
     
+    /* Temporary text item using the given font to allow text distances to be known */
     sf::Text tempText(std::string(m_content), FontManager::getInstance().getFont(),
             CHAR_SIZE);
     
@@ -39,28 +40,57 @@ void InfoPane::InfoContent::setContent(const std::string &text)
      * positioning */
     int numChars = m_content.length();
     int currI = 0, currWidth = 0, startI = 0, widthOffset = 0;
+    bool isHighlighted = false;
+
+
+    m_textDisplay.emplace_back();
+    std::list<std::pair<bool, sf::Text>> *currRow = &m_textDisplay.back();
+
     while (currI < numChars) {
+        if (tempText.getString()[currI] == '`') {
+            sf::String temp = tempText.getString();
+            temp.replace(currI, 1, "");
+            tempText.setString(temp);
+            numChars--;
+            if (currI != startI) {
+                /* Previous iteration will guarantee that the text before this character will fit on the line */
+                currRow->emplace_back();
+                std::pair<bool, sf::Text> &textPair = currRow->back();
+                textPair.first = isHighlighted;
+                isHighlighted = !isHighlighted;
+                textPair.second.setFont(FontManager::getInstance().getFont());
+                textPair.second.setCharacterSize(CHAR_SIZE);
+                textPair.second.setString(tempText.getString().substring(startI, currI - startI));
+                startI = currI;
+            }
+            continue;
+        }
         currWidth = tempText.findCharacterPos(currI).x - widthOffset;
-        if (currWidth >= CONTENT_WIDTH || m_content[currI] == '\n') {
-            m_textDisplay.emplace_back();
-            sf::Text &textItem = m_textDisplay.back();
-            textItem.setFont(FontManager::getInstance().getFont());
-            textItem.setCharacterSize(CHAR_SIZE);
+        if (currWidth >= CONTENT_WIDTH || tempText.getString()[currI] == '\n') {
+            //m_textDisplay.emplace_back();
+            //std::pair<bool, std::list<sf::Text>> textPair = m_textDisplay.back();
+            currRow->emplace_back();
+            std::pair<bool, sf::Text> &textPair = currRow->back();
+            textPair.second.setFont(FontManager::getInstance().getFont());
+            textPair.second.setCharacterSize(CHAR_SIZE);
+            //textItem.
             
             std::size_t endI = currI;
             /* Want to end line at end of previous word */
             if (currWidth >= CONTENT_WIDTH)
-                endI = m_content.rfind(' ', currI - 1);
+                endI = tempText.getString().toAnsiString().rfind(' ', currI - 1);
             
-            
-            if (endI > startI || m_content[currI] == '\n') {
+            if (endI > startI || tempText.getString()[currI] == '\n') {
                 /* Space found on line or new line */
-                textItem.setString(m_content.substr(startI, endI - startI));
+                textPair.second.setString(tempText.getString().substring(startI, endI - startI));
                 startI = endI + 1;
             } else { /* Word does not fit on just one line */
-                textItem.setString(m_content.substr(startI, currI - startI - 1));
+                textPair.second.setString(tempText.getString().substring(startI, currI - startI - 1));
                 startI = currI - 1;
             }
+            textPair.first = isHighlighted;
+            m_textDisplay.emplace_back();
+            currRow = &m_textDisplay.back();
             
             currI = startI;
             widthOffset = tempText.findCharacterPos(startI).x;
@@ -69,10 +99,13 @@ void InfoPane::InfoContent::setContent(const std::string &text)
             currI++;
         }
     }
-    if (startI != numChars) { /* Add any remaining characters to final line */
-        m_textDisplay.emplace_back(m_content.substr(startI, numChars - startI),
-                FontManager::getInstance().getFont(), CHAR_SIZE);
+    if (startI != currI) { /* Add any remaining characters to final line */
+        currRow->emplace_back(isHighlighted,
+                sf::Text(tempText.getString().substring(startI, currI - startI),
+                        FontManager::getInstance().getFont(), CHAR_SIZE));
     }
+    setExpanded(m_expanded);
+    // updateContents();
     PLOGD << "Num Lines: " << m_textDisplay.size();
 }
 
@@ -156,19 +189,28 @@ void InfoPane::InfoContent::render(sf::RenderWindow &window,
     
     m_expandIcon.setFillColor(m_textColor);
     
-    int lineSpacing =
+    float lineSpacing =
             FontManager::getInstance().getFont().getLineSpacing(CHAR_SIZE);
     /* Offset for each text line to keep in bounding box */
-    int offset = (lineSpacing - CHAR_SIZE) / 2;
+    float yOffset = (lineSpacing - CHAR_SIZE) / 2;
     if (m_textDisplay.size() > 1) {
         if (m_expanded) {
             int prevHeight = lineSpacing;
-            for (std::list<sf::Text>::iterator it = m_textDisplay.begin();
+            for (std::list<std::list<std::pair<bool, sf::Text>>>::iterator it = m_textDisplay.begin();
                     it != m_textDisplay.end(); it++) {
-                it->setColor(m_textColor);
-                it->setPosition(m_pos.x, m_pos.y + prevHeight - offset);
+                float xOffset = 0;
+                for (std::list<std::pair<bool, sf::Text>>::iterator itt = it->begin();
+                        itt != it->end(); itt++) {
+                    if (itt->first) {
+                        itt->second.setColor(m_backgroundColor + m_selectedColorOffset);
+                    } else {
+                        itt->second.setColor(m_textColor);
+                    }
+                    itt->second.setPosition(m_pos.x + xOffset, m_pos.y + prevHeight - yOffset);
+                    xOffset += itt->second.findCharacterPos(-1).x - itt->second.findCharacterPos(0).x;
+                    window.draw(itt->second);
+                }
                 prevHeight += lineSpacing;
-                window.draw(*it);
             }
         }
         m_expandIcon.setPosition(m_pos.x + m_background.getSize().x / 2,
@@ -176,14 +218,20 @@ void InfoPane::InfoContent::render(sf::RenderWindow &window,
         window.draw(m_expandIcon);
     } else {
         if (m_textDisplay.size() == 1) {
-            sf::Text &tempText = m_textDisplay.front();
-            tempText.setColor(m_textColor);
-            tempText.setPosition(m_pos.x, m_pos.y - offset);
-            window.draw(tempText);
+            float xOffset = 0;
+            for (std::list<std::pair<bool, sf::Text>>::iterator it = m_textDisplay.front().begin();
+                    it != m_textDisplay.front().end(); it++) {
+                if (it->first) {
+                    it->second.setColor(m_backgroundColor + m_selectedColorOffset);
+                } else {
+                    it->second.setColor(m_textColor);
+                }
+                it->second.setPosition(m_pos.x + xOffset, m_pos.y - yOffset);
+                xOffset += it->second.findCharacterPos(-1).x - it->second.findCharacterPos(0).x;
+                window.draw(it->second);
+            }
         }
     }
-    
-    
 }
 
 bool InfoPane::InfoContent::contains(float x, float y)
@@ -197,7 +245,8 @@ InfoPane::InfoPane()
     m_moving = false;
     m_renderable = false;
     //m_content.emplace("type", "This is a test, te AV let's keep trying AH this abcdefghijklmnopqrst it kinda works but may actually not");
-    /*setContent("type", "This is a test, te AV let's keep trying AH this abcdefghijklmnopqrstuvwxyz123456789 it kinda works but may actually not");
+    /*
+    setContent("type", "This is a test, te AV let's keep `trying AH` this abcdefghijklmnopqrstuvwxyz123456789 it kinda works but may actually not");
     m_content["type"].second.setExpanded(true);
     
     //m_content.emplace("example", "Yet another little test for this");
@@ -205,18 +254,18 @@ InfoPane::InfoPane()
     //m_content["example"].setExpanded(true);
     //setContent("example", "Temp");
     
-    setContent("one test", "");
+    //setContent("one test", "");
     setContent("one test", "testing");
     
     setContent("listTest", "This is a list:\n\n -Hey\n -How's it going\n -Oh no, looks like we have a multiline piece here");
     setTitle("Testing Title");
     
-    setPosition(1200 / 2, 1200 / 2);*/
+    setPosition(1200 / 2, 1200 / 2);
     //setBackgroundColor(sf::Color::Yellow);
+    */
     m_title.setFont(FontManager::getInstance().getFont());
     m_title.setCharacterSize(TITLE_CHAR_SIZE);
     setBackgroundColor(sf::Color(175, 0, 175, 255));
-    
     
     m_closeCross1.setFillColor(sf::Color::Red);
     m_closeCross2.setFillColor(sf::Color::Red);
@@ -245,22 +294,30 @@ void InfoPane::setBackgroundColor(const sf::Color &col)
         m_textColor = sf::Color::White;
 }
 
-bool InfoPane::setContent(const std::string &label, const std::string &content)
+bool InfoPane::setContent(const std::string &label, const std::string &content, bool keepPosition)
 {
     std::map<std::string, std::pair<sf::Text, InfoContent>>::iterator val =
             m_content.find(label);
-    if (val == m_content.end())
+    if (val == m_content.end()) {
+        // Content hasn't been added before
         m_content.emplace(std::make_pair(label,
                 std::pair<sf::Text, InfoContent>(std::piecewise_construct,
                 std::forward_as_tuple(label,
                 FontManager::getInstance().getFont(), CHAR_SIZE),
                 std::forward_as_tuple(content))));
-    else
-        val->second = std::pair<sf::Text, InfoContent>(
-                std::piecewise_construct, std::forward_as_tuple(label,
-                FontManager::getInstance().getFont(), CHAR_SIZE),
-                std::forward_as_tuple(content));
-    
+        m_contentOrder.push_back(label);
+    } else {
+        // Content has been added before, replace its value
+        val->second.first.setString(label);
+        val->second.second.setContent(content);
+        if (!keepPosition) {
+            // Remove the old ordering
+            m_contentOrder.remove(label);
+            m_contentOrder.push_back(label);
+        }
+    }
+    updateContents();
+
     
     
         /*m_content.emplace(std::piecewise_construct,
@@ -302,14 +359,13 @@ void InfoPane::updateContents()
     size.y += titleHeight; // Title height
     /* First pass sets label and content vertical spacing, label x positions
      * and calculates max label width */
-    for (std::map<std::string, std::pair<sf::Text, InfoContent>>::iterator it =
-            m_content.begin(); it != m_content.end(); it++) {
-        it->second.second.m_pos.y = m_pos.y + size.y;
-        it->second.first.setPosition(m_pos.x + CONTENT_BUFFER,
-                m_pos.y + size.y);
-        size.y += it->second.second.getSize().y + CONTENT_BUFFER;
-        maxLabelWidth = std::max(maxLabelWidth,
-                it->second.first.getLocalBounds().width);
+    for (std::list<std::string>::iterator it = m_contentOrder.begin();
+            it != m_contentOrder.end(); ++it) {
+        std::pair<sf::Text, InfoContent> &val = m_content[*it];
+        val.second.m_pos.y = m_pos.y + size.y;
+        val.first.setPosition(m_pos.x + CONTENT_BUFFER, m_pos.y + size.y);
+        size.y += val.second.getSize().y + CONTENT_BUFFER;
+        maxLabelWidth = std::max(maxLabelWidth, val.first.getLocalBounds().width);
     }
     
     m_dividerLine.setSize(sf::Vector2f(CONTENT_BUFFER / 3,
@@ -361,11 +417,12 @@ void InfoPane::update(sf::Event *event, const sf::Vector2f &windowSize,
         }
     }
     
-    for (std::map<std::string, std::pair<sf::Text, InfoContent>>::iterator it =
-            m_content.begin(); it != m_content.end(); it++) {
-        bool expanded = it->second.second.m_expanded;
-        it->second.second.update(event, windowSize, clickedOn);
-        if (expanded != it->second.second.m_expanded)
+    for (std::list<std::string>::iterator it = m_contentOrder.begin();
+            it != m_contentOrder.end(); ++it) {
+        std::pair<sf::Text, InfoContent> &val = m_content[*it];
+        bool expanded = val.second.m_expanded;
+        val.second.update(event, windowSize, clickedOn);
+        if (expanded != val.second.m_expanded)
             updateContents();
     }
     

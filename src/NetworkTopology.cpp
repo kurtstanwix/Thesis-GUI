@@ -41,7 +41,7 @@ NetworkTopology::Link::Link(Node &end1, Node &end2) :
                                 end1.m_pos.x - end2.m_pos.x)) / 6.0f),
                 end2.shape.getPosition()})
 {
-    m_color = sf::Color(125, 0, 0);
+    m_color = sf::Color::Blue;
     std::cout << "Making link bezier " << end1.m_pos << " - " <<
             (end1.m_pos + end2.m_pos) / 2.0f << " - " <<
             end2.m_pos << std::endl;
@@ -793,6 +793,14 @@ bool NetworkTopology::setLinkColor(int end1ID, int end2ID, const sf::Color &col)
     return true;
 }
 
+const sf::Color NetworkTopology::getLinkColor(int end1ID, int end2ID)
+{
+    Link *link = getLink(end1ID, end2ID);
+    if (link == nullptr)
+        return sf::Color::Transparent;
+    return link->getColor();
+}
+
 
 bool NetworkTopology::setLinkInfoColor(int end1ID, int end2ID,
         const sf::Color &col)
@@ -805,12 +813,12 @@ bool NetworkTopology::setLinkInfoColor(int end1ID, int end2ID,
 }
 
 bool NetworkTopology::setLinkInfoParameter(int end1ID, int end2ID,
-        const std::string &label, const std::string &content)
+        const std::string &label, const std::string &content, bool keepPosition)
 {
     Link *link = getLink(end1ID, end2ID);
     if (link == nullptr)
         return false;
-    link->m_info.setContent(label, content);
+    link->m_info.setContent(label, content, keepPosition);
     return true;
 }
 
@@ -843,12 +851,12 @@ bool NetworkTopology::setNodeInfoColor(int nodeID, const sf::Color &col)
 }
 
 bool NetworkTopology::setNodeInfoParameter(int nodeID,
-        const std::string &label, const std::string &content)
+        const std::string &label, const std::string &content, bool keepPosition)
 {
     Node *node = getNode(nodeID);
     if (node == nullptr)
         return false;
-    node->m_info.setContent(label, content);
+    node->m_info.setContent(label, content, keepPosition);
     return true;
 }
 

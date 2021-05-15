@@ -28,7 +28,7 @@ private:
         sf::CircleShape m_expandIcon;
         
         int m_numLines;
-        std::list<sf::Text> m_textDisplay;
+        std::list<std::list<std::pair<bool, sf::Text>>> m_textDisplay;
         sf::Color m_textColor;
     public:
         InfoContent() {};
@@ -55,6 +55,7 @@ private:
     
     sf::Text m_title;
     std::map<std::string, std::pair<sf::Text, InfoContent>> m_content;
+    std::list<std::string> m_contentOrder;
     sf::Vector2f m_pos;
     
     sf::RectangleShape m_background;
@@ -70,7 +71,7 @@ public:
     InfoPane();
     
     void setBackgroundColor(const sf::Color &col);
-    bool setContent(const std::string &label, const std::string &content);
+    bool setContent(const std::string &label, const std::string &content, bool keepPosition=false);
     void setPosition(int x, int y);
     void setPosition(const sf::Vector2f &pos);
     void setTitle(const std::string &title);

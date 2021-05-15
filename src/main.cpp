@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 
 #include "Config.h"
 #include "NetworkTopology.h"
+#include "Utility.h"
 
 
 using namespace std;
@@ -106,7 +107,7 @@ int main(int argc, char **argv)
     srand(time(0));
     
     NetworkWindow networkWindow;
-    if (!networkWindow.init(sf::Vector2f(window.getSize()), "../MDPExample1.json", squareWidth))
+    if (!networkWindow.init(sf::Vector2f(window.getSize()), RESOURCE("MDPExample1.json"), squareWidth))
         exit(1);
     //InfoPane info;
     

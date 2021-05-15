@@ -188,16 +188,19 @@ public:
     /* Node InfoPane property setters */
     bool setNodeInfoColor(int nodeID, const sf::Color &col);
     bool setNodeInfoParameter(int nodeID, const std::string &label,
-            const std::string &content);
+            const std::string &content, bool keepPosition = false);
     bool setNodeInfoTitle(int nodeID, const std::string &title);
     
     /* Link property setters */
     bool setLinkColor(int end1ID, int end2ID, const sf::Color &col);
+
+    /* Link property getters */
+    const sf::Color getLinkColor(int end1ID, int end2ID);
     
     /* Link InfoPane property setters */
     bool setLinkInfoColor(int end1ID, int end2ID, const sf::Color &col);
     bool setLinkInfoParameter(int end1ID, int end2ID, const std::string &label,
-            const std::string &content);
+            const std::string &content, bool keepPosition = false);
     bool setLinkInfoTitle(int end1ID, int end2ID, const std::string &title);
     
     /* Renderable interface */

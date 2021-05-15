@@ -19,6 +19,7 @@
 
 constexpr std::chrono::milliseconds DOUBLE_CLICK_DURATION { 600 };
 
+#define RESOURCE(NAME) (std::string("../res/").append(NAME))
 
 /**
  * @class FontManager
@@ -34,7 +35,7 @@ protected:
     sf::Font m_font;
     
     FontManager() {
-        m_font.loadFromFile("../coolvetica rg.ttf");
+        m_font.loadFromFile(RESOURCE("coolvetica rg.ttf"));
     };
 public:
     static FontManager& getInstance()
