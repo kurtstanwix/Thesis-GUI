@@ -60,6 +60,15 @@ public:
         PLOGD << "Size " << m_renderables.size();
         PLOGD << "Last: " << *m_renderables.back() << " @ " << m_renderables.back();
     }
+
+    bool moveToFront(iterator element)
+    {
+        if (element != m_renderables.begin() ) {
+            m_renderables.splice(m_renderables.begin(), m_renderables, element, std::next(element));
+            return true;
+        }
+        return false;
+    }
 };
 
 
@@ -166,6 +175,11 @@ public:
             }
                 
             return *this;
+        }
+
+        bool moveToFront()
+        {
+            return m_parentPos->second.moveToFront(m_curr);
         }
         
         friend bool operator==(const iterator &a, const iterator &b)

@@ -164,6 +164,8 @@ public:
     void print();
     
     void addInfoPane(InfoPane &info);
+
+    std::vector<int> getNodeIds();
     
     /* Returns true if Node with nodeID exists and if so, inList will contain
      * the nodeIDs of all Nodes that can access this Node. Otherwise returns

@@ -657,6 +657,17 @@ void NetworkTopology::addInfoPane(InfoPane &info)
     addToLayer(INFO_LAYER_ID, info);
 }
 
+std::vector<int> NetworkTopology::getNodeIds()
+{
+    std::vector<int> result;
+    for (std::set<std::reference_wrapper<Node>>::iterator n = m_nodes.begin();
+            n != m_nodes.end(); ++n)
+    {
+        result.push_back(n->get().id);
+    }
+    return result;
+}
+
 bool NetworkTopology::getNodesIn(int nodeID, std::vector<int> &inList)
 {
     Node *node = getNode(nodeID);
@@ -812,8 +823,29 @@ void NetworkTopology::update(sf::Event *event, const sf::Vector2f &windowSize,
         }*/
         /* This will be true if another item has already processed a click
          * event (it was on top of this object) */
-        //bool anotherItemClicked = clickedOn;
+        /*PLOGI << **it;
+        if (Node *node = dynamic_cast<Node*>(*it)) {
+            if (node->id == 5) {
+                iterator oldI = it;
+                --it;
+                bool temp = oldI.moveToFront();
+                if (!temp) {
+                    it = oldI;
+                }
+            }
+        }
+        PLOGI << **it;*/
+        bool clickedBefore = clickedOn;
         (*it)->update(event, windowSize, clickedOn);
+        if (clickedOn && !clickedBefore) {
+            iterator oldI = it;
+            --it;
+            if (!oldI.moveToFront())
+                it = oldI;
+        }
+        //std::stringstream ss;
+        //ss << *it;
+        //ss.str();
         //if (!anotherItemClicked && clickedOn) { /* This item was clicked */
          /*   if (typeid(**it) == typeid(Node)) {
                 PLOGD << "It was a node";
@@ -937,9 +969,7 @@ void NetworkTopology::render(sf::RenderWindow& window,
 {
     //Layer &l = m_layers[1];
     //PLOGD << "Num layers: " << getNumLayers();
-    int temp = 0;
     for (reverse_iterator it = rbegin(); it != rend(); ++it) {
-        temp++;
         if ((*it)->isRenderable()) {
             (*it)->render(window, windowSize);
             
