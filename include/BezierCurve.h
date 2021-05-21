@@ -16,7 +16,6 @@ public:
         sf::RectangleShape m_shape;
         
         Segment();
-        //virtual ~Segment() {};
         Segment(const sf::Vector2f &pos);
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -36,7 +35,6 @@ public:
         float m_length;
         
         Handle();
-        //virtual ~Handle() {};
         Handle(const sf::Vector2f &pos);
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -47,23 +45,14 @@ public:
         void streamOut(std::ostream& os) const;
     };
     
-    //sf::Color m_color;
     float m_width;
-    
     bool m_constructed;
-    //std::list<Handle> m_handles;
-    
     int m_fidelity;
     std::list<Segment> m_segments;
-    
-    //std::list<
-    //std::pair<sf::RectangleShape, sf::RectangleShape> m_handleShapes;
-    //std::pair<sf::RectangleShape, sf::RectangleShape> m_handleLines;
     
     void ConstructCurve();
     sf::Vector2f GetPointOnCurve(float t);
     
-//public:
     std::list<Handle> m_handles;
     BezierCurve(int fidelity, std::list<sf::Vector2f> controlPoints);
     

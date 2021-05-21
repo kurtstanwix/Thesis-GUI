@@ -11,15 +11,12 @@
 
 #include "Config.h"
 
-
-
-
-
 #include <iostream>
 
-
+// Time window for a second click to be processed as a double click
 constexpr std::chrono::milliseconds DOUBLE_CLICK_DURATION { 600 };
 
+// Wrapper to not have to refer to the path of resources when used
 #define RESOURCE(NAME) (std::string("../res/").append(NAME))
 
 /**
@@ -32,7 +29,6 @@ constexpr std::chrono::milliseconds DOUBLE_CLICK_DURATION { 600 };
 class FontManager
 {
 protected:
-    //FontManager
     sf::Font m_font;
     
     FontManager() {
@@ -77,6 +73,7 @@ inline std::ostream& operator<<(std::ostream& os, const sf::Vector2f& vec) {
     return os;
 }
 
+// Scalar operations on 2D float vectors
 inline sf::Vector2f operator+(sf::Vector2f const &lhs, float const &rhs)
 {
     return sf::Vector2f(lhs.x + rhs, lhs.y + rhs);
@@ -87,6 +84,7 @@ inline sf::Vector2f operator-(sf::Vector2f const &lhs, float const &rhs)
     return sf::Vector2f(lhs.x - rhs, lhs.y - rhs);
 }
 
+// Piecewise operations on two 2D float vectors
 inline sf::Vector2f operator*(sf::Vector2f const &lhs, sf::Vector2f const &rhs)
 {
     return sf::Vector2f(lhs.x * rhs.x, lhs.y * rhs.y);
@@ -97,7 +95,7 @@ inline sf::Vector2f operator/(sf::Vector2f const &lhs, sf::Vector2f const &rhs)
     return sf::Vector2f(lhs.x / rhs.x, lhs.y / rhs.y);
 }
 
-/* Color overloads */
+// Plog printing operators for logging commonly used objects
 inline plog::Record& operator<<(plog::Record &record, const sf::Color &col)
 {
     return record << "(" << unsigned(col.r) << "," << unsigned(col.g) << "," <<
@@ -125,77 +123,78 @@ inline plog::Record& operator<<(plog::Record &record, const std::pair<T1, T2> &p
 {
     return record << "(" << pair.first << "," << pair.second << ")";
 }
-    
-/*
-inline sf::Vector& operator=(const ClassName& other)
-{
-    a = other.a;
-    b = other.b;
-    return *this;
-}
-*/
 
+// Float equality with 0.01 tolerance
 inline bool floatEquals(const float a, const float b)
 {
     return std::abs(a - b) <= 0.01f;
 }
 
+// 2D float vector equality with 0.01 tolerance
 inline bool floatEquals(const sf::Vector2f &a, const sf::Vector2f &b)
 {
     return std::abs(a.x - b.x) <= 0.01f && std::abs(a.y - b.y) <= 0.01f;
 }
 
-
-
+// Convert a unit 2D float vector to a 2D float vector representing a pixel position
 inline sf::Vector2f unitToPixel(const sf::Vector2f& max,
         const sf::Vector2f& scale)
 {
     return (scale + 1.0f) * max / 2.0f;
 }
 
+// Convert a unit float value to its value in pixel coords
 inline float unitToPixel(float max, float scale)
 {
     return (scale + 1) * max / 2;
 }
 
+// Convert a 2D float vector representing a pixel position to a unit 2D float vector
 inline sf::Vector2f pixelToUnit(const sf::Vector2f& max,
         const sf::Vector2f& pixel)
 {
     return (2.0f * pixel) / max - 1.0f;
 }
 
+// Convert a value in pixel coords to its unit float value
 inline float pixelToUnit(float max, int pixel)
 {
     return (2 * pixel) / max - 1;
 }
 
+// Convert a unit direction 2D float vector to a direction vector in pixel coords
 inline sf::Vector2f unitToPixelVector(const sf::Vector2f& max,
         const sf::Vector2f& scale)
 {
     return scale * max / 2.0f;
 }
 
+// Convert a unit direction float value to its direction value in pixel coords
 inline float unitToPixelVector(float max, float scale)
 {
     return scale * max / 2;
 }
 
+// Convert a direction vector in pixel coords to its unit direction 2D float vector
 inline sf::Vector2f pixelToUnitVector(const sf::Vector2f& max,
         const sf::Vector2f& pixel)
 {
     return (2.0f * pixel) / max;
 }
 
+// Convert a direction value in pixel coords to its unit direction float value
 inline float pixelToUnitVector(float max, int pixel)
 {
     return (2.0f * pixel) / max;
 }
 
+// Scales a value to be within the max and with a buffer of objectSize
 inline float capInitial(float max, int objectSize, float initial)
 {
     return initial * (1 - 2 * objectSize / max);
 }
 
+// Scales a vector to be within the max and with a buffer of objectSize
 inline sf::Vector2f capInitial(const sf::Vector2f max, sf::Vector2f objectSize,
         sf::Vector2f initial)
 {

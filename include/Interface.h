@@ -26,10 +26,8 @@ public:
     sf::Vector2f m_pos;
     Interface &m_parent;
     
-    
-    InterfaceButton(std::string name, const sf::Vector2f &windowSize,
-            void (*onClickCallback)(InterfaceButton &caller),
-            Interface &parent);
+    InterfaceButton(std::string name, void (*onClickCallback)(InterfaceButton &caller),
+            Interface &parent, const sf::Vector2f &size);
     
     void setOutlineColor(const sf::Color &color)
     {
@@ -60,16 +58,15 @@ class Interface : public LayeredRenderable
 private:
     std::list<InterfaceButton> m_buttons;
     
-    BezierCurve m_bezier;
-    
 public:
     NetworkTopology &m_nettop;
     
     Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop);
 
-    void registerButton(const std::string &name, const sf::Vector2f &windowSize,
+    void registerButton(const std::string &name,
         void (*onClickCallback)(InterfaceButton &caller),
-        const sf::Color &col, const sf::Vector2f &pos);
+        const sf::Color &col, const sf::Vector2f &pos,
+        const sf::Vector2f &size);
     
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,

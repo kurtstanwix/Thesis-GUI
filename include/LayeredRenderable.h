@@ -19,15 +19,6 @@ public:
     typedef std::list<Renderable*>::iterator iterator;
     typedef std::list<Renderable*>::reverse_iterator reverse_iterator;
     
-    //virtual void update(sf::Event *event, const sf::Vector2f &windowSize) = 0;
-    //virtual void render(sf::RenderWindow& window,
-    //        const sf::Vector2f &windowSize) = 0;
-    //{
-        //for (std::list<Renderable>::iterator it = m_renderables.begin())
-    //
-    
-    
-    
     const iterator begin()
     {
         return m_renderables.begin();
@@ -61,6 +52,11 @@ public:
         PLOGD << "Last: " << *m_renderables.back() << " @ " << m_renderables.back();
     }
 
+    void erase(iterator &it)
+    {
+        m_renderables.erase(it);
+    }
+
     bool moveToFront(iterator element)
     {
         if (element != m_renderables.begin() ) {
@@ -70,12 +66,6 @@ public:
         return false;
     }
 };
-
-
-
-
-
-
 
 /*
  * Seperates the rendering and updating into layers of objects, with the lowest
@@ -111,10 +101,9 @@ public:
         bool reverseOuterLoop()
         {
             if (m_parentPos == m_parent.rend().base())
-                return false; /* Stop moving if the outer loop is done */
+                return false; // Stop moving if the outer loop is done
             do {
                 m_parentPos--;
-                //PLOGD << "Parent size: " << m_parentPos->second.size();
                 if (m_parentPos->second.size() != 0) {
                     return true;
                 }
@@ -149,11 +138,11 @@ public:
         iterator& operator++()
         {
             m_curr++;
-            /* Check if at the end of the inner loop, if so, go to next list */
+            // Check if at the end of the inner loop, if so, go to next list
             if (m_curr == m_parentPos->second.end()) {
-                if (advanceOuterLoop()) /* Go through the next outer list */
+                if (advanceOuterLoop()) // Go through the next outer list
                     m_curr = m_parentPos->second.begin();
-                else /* No More left */
+                else // No More left, set to last element of last layer
                     m_curr = m_parent.rbegin()->second.end();
             }
                 
@@ -162,13 +151,13 @@ public:
         
         iterator& operator--()
         {
-            /* Check if at the end of the inner loop, if so, go to next list */
+            // Check if at the end of the inner loop, if so, go to next list
             if (m_curr == m_parentPos->second.rend().base()) {
-                if (reverseOuterLoop()) { /* Go through the next outer list */
+                if (reverseOuterLoop()) { // Go through the next outer list
                     Layer::reverse_iterator tmp = m_parentPos->second.rbegin();
                     m_curr = (++tmp).base();
                 }
-                else /* No More left */
+                else // No More left, set to first element of first layer
                     m_curr = m_parent.rend()->second.rend().base();
             } else {
                 m_curr--;
@@ -197,7 +186,7 @@ public:
         {
             return !(a == b);
         }
-    protected:
+        
         std::map<int, Layer> &m_parent;
         std::map<int, Layer>::iterator m_parentPos;
         std::list<value_type>::iterator m_curr;
@@ -231,37 +220,33 @@ public:
     
     const iterator begin()
     {
-        /* Find the first non-empty layer */
+        // Find the first non-empty layer
         std::map<int, Layer>::iterator it;
         for (it = m_layers.begin(); it != m_layers.end(); it++) {
             if (it->second.size() != 0)
                 break;
         }
-        if (it == m_layers.end())
+        if (it == m_layers.end()) // Non found
             return end();
         else
             return iterator(m_layers, it, it->second.begin());
     }
-    //rbegin = reverse_iterator(end())
+    
     const iterator end()
     {
-        //reverse_iterator temp = rbegin();
-        //return (temp).base();
         return iterator(m_layers, m_layers.end(),
                 std::prev(m_layers.end())->second.end());
     }
     
     const reverse_iterator rbegin()
     {
-        /* Find the first non-empty layer */
+        // Find the first non-empty layer
         std::map<int, Layer>::reverse_iterator it;
         for (it = m_layers.rbegin(); it != m_layers.rend(); it++) {
-            int temp = it->second.size();
-            //PLOGD << "Temp: " << temp;
-            if (it->second.size() != 0)
+            if (it->second.size() != 0) // Non empty
                 break;
         }
-        if (it == m_layers.rend())
+        if (it == m_layers.rend()) // None found
             return rend();
         else {
             Layer::reverse_iterator rev = it->second.rbegin();
@@ -274,9 +259,15 @@ public:
     const reverse_iterator rend()
     {
         return reverse_iterator(begin());
-        //return reverse_iterator(iterator(m_layers, m_layers.begin(),
-        //        m_layers.begin()->second.rend().base()));
-        //return m_layers.begin()->rend();
+    }
+
+    // Remove the value at the iterator from its layer and return the next value
+    iterator& erase(iterator &it)
+    {
+        iterator toDelete = it;
+        ++it;
+        toDelete.m_parentPos->second.erase(toDelete.m_curr);
+        return it;
     }
     
     Layer::size_type size() const
@@ -305,7 +296,7 @@ public:
 protected:
     LayeredRenderable()
     {
-        /* Has an initial layer that can't be deleted */
+        // Everyone has an initial layer that can't be deleted
         m_layers[0];
     }
     void streamOut(std::ostream &os) const {};

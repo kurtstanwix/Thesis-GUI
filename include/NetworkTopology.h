@@ -102,12 +102,10 @@ private:
     };
     
     struct Link : public Renderable {
-        //Node(int id) : id(id) {}
         std::vector<std::reference_wrapper<Node>> m_ends;
         BezierCurve shape;
         std::vector<sf::CircleShape> endArrows;
         bool m_isBidirectional;
-        //bool activated;
         
         InfoPane m_info;
         
@@ -117,6 +115,7 @@ private:
             shape.setSelected(state);
         }
         
+        // Get the node on the other end of this link to the given node
         Node& getOtherEnd(const Node& n) const {
             if (&m_ends[0].get() == &n) {
                 return m_ends[1];
@@ -127,10 +126,10 @@ private:
             }
         };
         
+        // No duplicate links are allowed so we do equality by their memory address
         friend bool operator==(const Link &lhs, const Link &rhs) {
             return &lhs == &rhs;
         }
-        
         
         /* Renderable interface */
         void update(sf::Event *event, const sf::Vector2f &windowSize,
@@ -139,29 +138,24 @@ private:
         bool contains(float x, float y);
         
         Link(Node& m_end1, Node& m_end2);
-        //virtual ~Link();
     protected:
+        // Part of renderable interface to print a friendly description
         void streamOut(std::ostream& os) const {
             os << "(" << this->m_ends[0] << "," << this->m_ends[1] << ")";
         }
     };
     
-    
-    // Constructor, destructor and copy assignment.
-    /// (default) Constructor
     // Private to avoid direct creation
     NetworkTopology(std::map<int, std::set<int>> nodeLinks,
             int nodeWidth, const sf::Vector2f &windowSize,
             nodeLayout layout = Circle);
 public:
     ~NetworkTopology();
-        
-    //NetworkTopology(NetworkTopology&& source) = default;
+    
     static NetworkTopology* createTopology(const sf::Vector2f &windowSize,
             const std::string &fileName, int nodeWidth = 100);
     
     void save(const std::string &fileName);
-    void print();
     
     void addInfoPane(InfoPane &info);
 
@@ -178,8 +172,14 @@ public:
      * returns false and outList is unmodified
      */
     bool getNodesOut(int nodeID, std::vector<int> &outList);
+
+    /* Removes a link from the system */
+    bool removeLink(int end1ID, int end2ID);
     
+    /* Sets a links state to be selected (highlights it) */
     bool setLinkSelected(int end1ID, int end2ID, bool state);
+
+    /* Sets a nodes state to be selected (highlights it) */
     bool setNodeSelected(int nodeID, bool state);
     
     /* Node property setters */
@@ -211,12 +211,6 @@ public:
 protected:
     void streamOut(std::ostream& os) const {};
 };
-
-
-//std::ostream& operator<<(std::ostream& os, const Node& node) {
-//    
-//    return os;
-//}
 
 
 #endif

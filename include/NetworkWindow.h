@@ -21,16 +21,13 @@ public:
     bool init(const sf::Vector2f &windowSize, const std::string &fileName,
             int nodeWidth = 100);
     
-    void registerButton(const std::string &name, const sf::Vector2f &windowSize,
-        void (*onClickCallback)(InterfaceButton &caller),
-        const sf::Color &col, const sf::Vector2f &pos)
+    // Register a button to the window
+    void registerButton(const std::string &name, void (*onClickCallback)(InterfaceButton &caller),
+        const sf::Color &col, const sf::Vector2f &pos, const sf::Vector2f &size)
     {
-        m_interface->registerButton(name, windowSize, onClickCallback, col, pos);
+        m_interface->registerButton(name, onClickCallback, col, pos, size);
     }
-    /*
-    bool setNodeActive(int nodeID, bool state);
-    bool setLinkActive(int nodeID1, int nodeID2, bool state);
-    */
+    
     /* Renderable interface */
     void update(sf::Event *event, const sf::Vector2f &windowSize,
             bool &clickedOn);

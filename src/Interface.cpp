@@ -11,15 +11,16 @@
 #define SHAPE_LAYER 1
 
 InterfaceButton::InterfaceButton(std::string name,
-        const sf::Vector2f &windowSize,
-        void (*onClickCallback)(InterfaceButton &caller), Interface &parent)
+        void (*onClickCallback)(InterfaceButton &caller), Interface &parent,
+        const sf::Vector2f &size)
     :
         m_name(name),
         m_onClick(onClickCallback),
         m_parent(parent)
 {
-    m_shape.setSize(windowSize / 20.0f);
+    m_shape.setSize(size);
     m_shape.setOrigin(getSize() / 2.0f);
+    m_shape.setOutlineThickness(4.0f);
     m_label.setFont(FontManager::getInstance().getFont());
     setText(m_label, name);
 }
@@ -28,6 +29,7 @@ void InterfaceButton::render(sf::RenderWindow &window,
         const sf::Vector2f &windowSize)
 {
     m_shape.setFillColor(m_color);
+    m_shape.setOutlineColor(m_color - m_selectedColorOffset);
     m_shape.setPosition(m_pos);
     m_label.setPosition(m_pos);
     window.draw(m_shape);
@@ -41,12 +43,10 @@ void InterfaceButton::update(sf::Event *event,
     if (event != nullptr) {
         if (!clickedOn && event->type == sf::Event::MouseButtonPressed &&
                 contains(event->mouseButton.x, event->mouseButton.y)) {
-            PLOGD<<"TRUE";
             clickedOn = true;
             if (event->mouseButton.button == sf::Mouse::Left)
                 m_onClick(*this);
-        } else
-            PLOGD<<"FALSE";
+        }
     }
 }
 
@@ -55,15 +55,10 @@ bool InterfaceButton::contains(float x, float y)
     return m_shape.getGlobalBounds().contains(x, y);
 }
 
-
 void InterfaceButton::streamOut(std::ostream& os) const
 {
     os << m_name << " Button";
 }
-
-
-
-
 
 bool Interface::contains(float x, float y)
 {
@@ -76,36 +71,27 @@ bool Interface::contains(float x, float y)
 
 Interface::Interface(const sf::Vector2f &windowSize, NetworkTopology &nettop)
     :
-        m_nettop(nettop),
-        m_bezier(4, {{0, 0}, {0.25, 0}, {0.5, 0}, {0.5, 0.25}, {0.5, 0.5}})
+        m_nettop(nettop)
 {
     PLOGD << "Creating interface";
 
     addLayer(BUTTON_LAYER);
     addLayer(SHAPE_LAYER);
-
-    registerButton("Exit", windowSize, &exitAction, sf::Color(200, 30, 30),
-            {windowSize.x - windowSize.x / 20.0f, windowSize.y / 20.0f});
-    
-
-    registerButton("Save", windowSize, &saveAction, sf::Color(30, 200, 30), windowSize / 20.0f);
-    
-    //addToLayer(SHAPE_LAYER, m_bezier);
     
     m_renderable = true;
 }
 
-void Interface::registerButton(const std::string &name, const sf::Vector2f &windowSize,
+// Register a clickable button which calls the callback function on click
+void Interface::registerButton(const std::string &name,
         void (*onClickCallback)(InterfaceButton &caller),
-        const sf::Color &col, const sf::Vector2f &pos)
+        const sf::Color &col, const sf::Vector2f &pos,
+        const sf::Vector2f &size)
 {
     std::list<InterfaceButton>::iterator button =
-            m_buttons.emplace(m_buttons.end(), name, windowSize, onClickCallback,
-            *this);
+            m_buttons.emplace(m_buttons.end(), name, onClickCallback, *this, size);
     
-    /* 1/20th (5%) of screen width and height */
     button->setColor(col);
-    button->setOutlineColor(sf::Color::Black);
+    button->setOutlineColor(col - m_selectedColorOffset);
     button->m_pos = pos;
 
     addToLayer(BUTTON_LAYER, *button);

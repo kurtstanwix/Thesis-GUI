@@ -20,7 +20,7 @@ NetworkWindow::NetworkWindow()
     addLayer(NETWORK_LAYER_ID);
 }
 
-
+// Load in the network file and set up the rendering layers
 bool NetworkWindow::init(const sf::Vector2f &windowSize,
         const std::string &fileName, int nodeWidth)
 {
@@ -41,6 +41,7 @@ bool NetworkWindow::init(const sf::Vector2f &windowSize,
     return true;
 }
 
+// Render all components to the window
 void NetworkWindow::render(sf::RenderWindow &window, const sf::Vector2f &windowSize)
 {
     PLOGV << "Num components " << m_components.size();
@@ -54,6 +55,7 @@ void NetworkWindow::render(sf::RenderWindow &window, const sf::Vector2f &windowS
     }
 }
 
+// Process the update logic of all components in the window
 void NetworkWindow::update(sf::Event *event, const sf::Vector2f &windowSize,
         bool &clickedOn)
 {
@@ -61,16 +63,3 @@ void NetworkWindow::update(sf::Event *event, const sf::Vector2f &windowSize,
         (*it)->update(event, windowSize, clickedOn);
     }
 }
-
-/*
-bool NetworkWindow::setNodeActive(int nodeID, bool state)
-{
-    get
-    return ((NetworkTopology*)*getLayer(NETWORK_LAYER_ID)->begin())->setNodeActive(nodeID, state);
-}
-
-bool NetworkWindow::setLinkActive(int nodeID1, int nodeID2, bool state)
-{
-    return ((NetworkTopology*)*getLayer(NETWORK_LAYER_ID)->begin())->setLinkActive(nodeID1, nodeID2, state);
-}
-*/

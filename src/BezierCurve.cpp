@@ -76,7 +76,7 @@ void BezierCurve::Handle::update(sf::Event *event,
     if(event != nullptr) {
         switch (event->type) {
             case sf::Event::MouseButtonPressed:
-                /* Can't interact with if not visible */
+                // Can't interact with if not visible
                 if (isRenderable() && !clickedOn) {
                     if (contains(event->mouseButton.x, event->mouseButton.y)) {
                         clickedOn = true;
@@ -85,8 +85,6 @@ void BezierCurve::Handle::update(sf::Event *event,
                         if (event->mouseButton.button == sf::Mouse::Left) {
                             m_selected = true;
                             m_moving = true;
-                            //m_lastDragPos.x = event->mouseButton.x;
-                            //m_lastDragPos.y = event->mouseButton.y;
                         } else if (event->mouseButton.button == sf::Mouse::Right) {
                             m_selected = false;
                         }
@@ -94,21 +92,15 @@ void BezierCurve::Handle::update(sf::Event *event,
                 }
                 break;
             case sf::Event::MouseButtonReleased:
+                // If mouse is released, will always stop moving
                 m_moving = false;
                 break;
             case sf::Event::MouseMoved:
-                /* Can't interact with if not visible */
+                // Can't interact with if not visible
                 if (isRenderable() && m_moving) {
-                    /* Clicked on and dragged, move with the mouse */
-                    //sf::Vector2f delta = pixelToUnitVector(windowSize,
-                    //        sf::Vector2f(event->mouseMove.x, event->mouseMove.y) -
-                    //        m_lastDragPos);
+                    // Clicked on and dragged, move with the mouse
                     m_pos = pixelToUnit(windowSize,
                             {event->mouseMove.x, event->mouseMove.y});
-                    //m_pos += delta;
-                    
-                    //m_lastDragPos.x = event->mouseMove.x;
-                    //m_lastDragPos.y = event->mouseMove.y;
                 }
                 break;
         }
@@ -132,24 +124,21 @@ bool BezierCurve::Handle::contains(float x, float y)
     return m_shape.getGlobalBounds().contains(x, y);
 }
 
-
-
-
-
+// Fidelity represents how many segments make a bezier curve, higher amounts will
+// lead to a smooth curve but require more processing
 BezierCurve::BezierCurve(int fidelity, std::list<sf::Vector2f> controlPoints)
     :
         m_fidelity(fidelity),
         m_constructed(false),
-        //m_color(150,50,20),
         m_width(4)
 {
     m_color = sf::Color(0, 150, 0);
     m_moving = false;
     for (std::list<sf::Vector2f>::iterator it = controlPoints.begin();
             it != controlPoints.end(); it++) {
-        std::cout << "Adding POS: " << *it << std::endl;
+        PLOGD << "Adding POS: " << *it;
         m_handles.emplace_back(*it);
-        std::cout << "Added POS: " << m_handles.back().m_pos << std::endl;
+        PLOGD << "Added POS: " << m_handles.back().m_pos;
     }
     
     setRenderable(true);
@@ -165,10 +154,12 @@ void BezierCurve::streamOut(std::ostream& os) const
     os << ")";
 }
 
+// Calculate the position on the bezier curve using the handle positions. t must be [0, 1]
+// (Can be viewed as percentage along the curve)
 sf::Vector2f BezierCurve::GetPointOnCurve(float t)
 {
     std::list<std::list<sf::Vector2f>> hierarchy(m_handles.size());
-    /* Add the first layer (the handle positions) */
+    // Add the first layer (the handle positions)
     for (std::list<Handle>::iterator it = m_handles.begin();
             it != m_handles.end(); it++) {
         hierarchy.front().push_back(it->m_pos);
@@ -178,7 +169,7 @@ sf::Vector2f BezierCurve::GetPointOnCurve(float t)
     for (std::list<std::list<sf::Vector2f>>::iterator it = std::next(hierarchy.begin());
             it != hierarchy.end(); it++) {
         std::list<sf::Vector2f> &upperLayer = *std::prev(it);
-        /* Find the parametric point on the inner layer */
+        // Find the parametric point on the inner layer
         for (std::list<sf::Vector2f>::iterator iit = upperLayer.begin();
                 std::next(iit) != upperLayer.end(); iit++) {
             it->emplace_back((1.0f - t) * *iit + t * *std::next(iit));
@@ -189,16 +180,16 @@ sf::Vector2f BezierCurve::GetPointOnCurve(float t)
 
 void BezierCurve::ConstructCurve()
 {
-    std::cout << "Constructing Bezier " << m_segments.size() << std::endl;
+    PLOGD << "Constructing Bezier " << m_segments.size();
     int sizeDiff = m_fidelity - m_segments.size();
     if (sizeDiff > 0) {
         // Add the missing segments
-        std::cout << "Filling " << sizeDiff << " Segments" << std::endl;
+        PLOGD << "Filling " << sizeDiff << " Segments";
         for (int i = 0; i < sizeDiff; i++) {
             m_segments.emplace_back();
         }
     } else if (sizeDiff < 0) {
-        std::cout << "Removing " << sizeDiff << " Segments" << std::endl;
+        PLOGD << "Removing " << sizeDiff << " Segments";
         // Remove the extra segments
         for (int i = 0; i > sizeDiff; i--) {
             m_segments.pop_back();
@@ -206,26 +197,13 @@ void BezierCurve::ConstructCurve()
     }
     
     
-    std::cout << "Start x: " << m_handles.front().m_pos.x << ", y: " <<
-            m_handles.front().m_pos.y << std::endl;
+    PLOGD << "Start x: " << m_handles.front().m_pos.x << ", y: " <<
+            m_handles.front().m_pos.y;
             
-    std::cout << "End x: " << m_handles.back().m_pos.x << ", y: " <<
-            m_handles.back().m_pos.y << std::endl;
+    PLOGD << "End x: " << m_handles.back().m_pos.x << ", y: " <<
+            m_handles.back().m_pos.y;
     
     float stepSize = 1.0f / m_fidelity;
-    //Temp
-    //sf::Vector2f start = unitToPixel(windowSize, m_endpoints.first);
-    //sf::Vector2f end = unitToPixel(windowSize, m_endpoints.second);
-    //std::cout << "Start " << start << std::endl;
-    //std::cout << "End " << end << std::endl;
-    //float diffX = (end.x - start.x) * stepSize;
-    //float diffY = (end.y - start.y) * stepSize;
-    //float length = std::sqrt(std::pow(diffX, 2) + std::pow(diffY, 2));
-    //
-    //std::cout << "stepSize: " << stepSize << std::endl;
-    //std::cout << "diffx: " << diffX << ", diffy: " << diffY << std::endl;
-    
-    //std::cout << "Length " << length << std::endl;
             
     sf::Vector2f start;
     sf::Vector2f end = GetPointOnCurve(0);
@@ -236,19 +214,16 @@ void BezierCurve::ConstructCurve()
         start = end;
         end = GetPointOnCurve(t + stepSize);
         
-        
+        // Rotate the segment to point in the direction of the step
         it->m_shape.setOrigin(0, m_width / 2);
         it->m_shape.setRotation((180 / M_PI) * std::atan2(end.y - start.y,
                 end.x - start.x));
-        //sf::Vector2f pos = unitToPixel(windowSize, m_handles.front().m_pos + (float) i * diff);
-        
         
         it->m_pos = start;
-        //it->m_shape.setPosition(unitToPixel(windowSize, start));
         i++;
     }
     m_constructed = true;
-    std::cout << "Rendered " << i << " shapes" << std::endl;
+    PLOGD << "Constructed " << i << " shapes";
 }
 
 bool BezierCurve::contains(float x, float y)
@@ -258,7 +233,7 @@ bool BezierCurve::contains(float x, float y)
         if (it->contains(x, y))
             return true;
     }
-    /* Handles are only included if the curve is selected */
+    // Handles are only included if the curve is selected (hidden otherwise)
     if (m_selected) {
         for (std::list<Handle>::iterator it = m_handles.begin();
                 it != m_handles.end(); it++) {
@@ -273,6 +248,7 @@ bool BezierCurve::contains(float x, float y)
 void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSize)
 {
     int i = 0;
+    // Render all segments if selected based on the constructed positions
     for (std::list<Segment>::iterator it = m_segments.begin();
             it != m_segments.end(); it++) {
         if (it->isRenderable()) {
@@ -290,19 +266,15 @@ void BezierCurve::render(sf::RenderWindow& window, const sf::Vector2f &windowSiz
             it->m_shape.setFillColor(m_color);
             it->render(window, windowSize);
         }
-        //std::cout << "Drawing num " << i++ << std::endl;
-        //std::cout << "X: " << it->getSize().x << ", Y: " << it->getSize().y << std::endl;
     }
     
+    // Render all handles if selected
     for (std::list<Handle>::iterator it = m_handles.begin();
             it != m_handles.end(); it++) {
-        //std::cout << "Handle " << it->m_pos << std::endl;
         if (it->isRenderable()) {
             it->m_shape.setFillColor(sf::Color::Yellow);
             it->render(window, windowSize);
         }
-        //std::cout << "Drawing num " << i++ << std::endl;
-        //std::cout << "X: " << it->getSize().x << ", Y: " << it->getSize().y << std::endl;
     }
 }
 
@@ -328,9 +300,8 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
             case sf::Event::MouseButtonPressed:
             {
                 bool toDeselect = !selectedHandle;
-                /* If a handle wasn't selected, check if the remainder was */
+                // If a handle wasn't selected, check if the remainder was
                 if (!clickedOn && !selectedHandle) {
-                    PLOGD<<"Dooooing";
                     if (contains(event->mouseButton.x, event->mouseButton.y)) {
                         clickedOn = true;
                         if (event->mouseButton.button == sf::Mouse::Left) {
@@ -344,6 +315,7 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
                         }
                     }
                 }
+                // Can hold down CTRL to select multiple items
                 if (toDeselect &&
                         !(sf::Keyboard::isKeyPressed(sf::Keyboard::LControl) ||
                         sf::Keyboard::isKeyPressed(sf::Keyboard::RControl))) {
@@ -356,36 +328,33 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
                 break;
             case sf::Event::MouseMoved:
                 if (selectedHandle) {
-                    /* Redraw bezier as handles can change the shape */
+                    // Redraw bezier as handles can change the shape
                     ConstructCurve();
                 } else if (m_moving) {
                     sf::Vector2f delta(pixelToUnit(windowSize,
                             sf::Vector2f(event->mouseMove.x, event->mouseMove.y)) -
                             pixelToUnit(windowSize, m_lastDragPos));
-                    std::cout << "Delta: " << delta << std::endl;
+                    PLOGV << "Delta: " << delta;
+                    // Move all the curve segments as one
                     for (std::list<Segment>::iterator it = m_segments.begin();
                             it != m_segments.end(); it++) {
                         it->m_pos += delta;
                     }
                     int i = 0;
+                    // Move all handles with the curve
                     for (std::list<Handle>::iterator it = m_handles.begin();
                             it != m_handles.end(); it++) {
-                        if (i == 0)
-                            std::cout << "prev " << it->m_pos << std::endl;
                         it->m_pos += delta;
-                        if (i == 0)
-                            std::cout << "after " << it->m_pos << std::endl;
                         i ++;
                     }
                     m_lastDragPos.x = event->mouseMove.x;
                     m_lastDragPos.y = event->mouseMove.y;
-                    //m_selectedNode->x = pixelToUnit(windowSize.x, m_nodeWidth, event->mouseMove.x);
-                    //m_selectedNode->y = pixelToUnit(windowSize.y, m_nodeWidth, event->mouseMove.y);
                 }
                 break;
             case sf::Event::KeyPressed:
                 switch (event->key.code) {
                     case sf::Keyboard::Up:
+                        // Increase the fidelity of the curve
                         if (m_selected) {
                             if (m_fidelity < 300)
                                 m_fidelity++;
@@ -393,6 +362,7 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
                         }
                         break;
                     case sf::Keyboard::Down:
+                        // Decrease the fidelity of the curve
                         if (m_selected) {
                             if (m_fidelity >= 2)
                                 m_fidelity--;
@@ -409,11 +379,9 @@ void BezierCurve::update(sf::Event *event, const sf::Vector2f &windowSize,
 void BezierCurve::setSelected(bool state)
 {
     m_selected = state;
-    /* Only render handles when selected */
+    // Only render handles when selected
     for (std::list<Handle>::iterator it = m_handles.begin();
             it != m_handles.end(); it++) {
-        //if (it != m_handles.begin() && it != std::prev(m_handles.end())) {
-            it->setRenderable(state);
-        //}
+        it->setRenderable(state);
     }
 }

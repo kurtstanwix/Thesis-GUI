@@ -6,14 +6,6 @@
 
 #include "LayeredRenderable.h"
 
-/*
-union InfoContent
-{
-    int integer,
-    std::string text
-};
-*/
-
 class InfoPane : public LayeredRenderable
 {
 private:
@@ -52,7 +44,7 @@ private:
         void streamOut(std::ostream& os) const {};
     };
     
-    
+    // Objects to make the pane pretty
     sf::Text m_title;
     std::map<std::string, std::pair<sf::Text, InfoContent>> m_content;
     std::list<std::string> m_contentOrder;
